@@ -1,12 +1,6 @@
 #pragma once
 
 #include <SDL3/SDL.h>
-#include <cstdlib>
-#include <vector>
-#include <algorithm>
-
-#include "ernest.hpp"
-#include "world.hpp"
 
 namespace uwunya {
 

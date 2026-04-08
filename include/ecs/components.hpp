@@ -1,35 +1,41 @@
 #pragma once
 
+#include <SDL3/SDL.h>
+
 namespace ecs {
 
-class Transform {
-public:
-    Transform();
-    ~Transform();
-
-private:
-    float x_;
-    float y_;
-    float z_;
+struct Transform {
+    float x;
+    float y;
+    float scaleX = 1.0f;
+    float scaleY = 1.0f;
+    float rotation = 0.0f; // in degrees
 };
 
-
-class Velocity {
-public:
-    Velocity();
-    ~Velocity();
-private:
-    float vx_;
-    float vy_;
-    float vz_;
+struct Sprite {
+    SDL_Texture* textureId; 
+    int width;     
+    int height;    
+    SDL_FRect srcRect; 
 };
 
-class Sprite {
-public:
-    Sprite();
-    ~Sprite();
-private:
-    int spriteId_;
+struct Color {
+    Uint8 r = 255, g = 255, b = 255, a = 255;
 };
 
-}
+struct Animation {
+    int frameCount;     
+    int currentFrame;  
+    float frameTime;   
+    float timer = 0.0f;
+    bool loop = true;
+};
+
+struct Rectangle {
+    float width;
+    float height;
+    bool filled = true;
+};
+
+//
+} // namespace ecs

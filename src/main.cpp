@@ -1,9 +1,10 @@
-#include "game.hpp"
+#include "core/game.hpp"
 
 
 int main(int argc, char* argv[]) {
 
-    uwunya::Game game(1024, 768);
+    core::Game game;
+    game.init("EvE", 800, 600);
     game.run();
 
     return 0;
