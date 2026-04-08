@@ -5,37 +5,58 @@
 namespace ecs {
 
 struct Transform {
-    float x;
-    float y;
+    float x = 0.0f;
+    float y = 0.0f;
     float scaleX = 1.0f;
     float scaleY = 1.0f;
-    float rotation = 0.0f; // in degrees
+    float rotation = 0.0f; 
+};
+
+struct Velocity {
+    float x = 0.0f;
+    float y = 0.0f;
+    float maxSpeed_x = 0.0f;
+    float maxSpeed_y = 0.0f;
+};
+
+struct RigidBody {
+    float width = 0.0f;
+    float height = 0.0f;
+    bool isStatic = true;
+    bool collidable = true;
+    float friction = 1.0f;
+    float gravity = 0.5f;
 };
 
 struct Sprite {
-    SDL_Texture* textureId; 
-    int width;     
-    int height;    
-    SDL_FRect srcRect; 
+    SDL_Texture* texture = nullptr;
 };
 
 struct Color {
-    Uint8 r = 255, g = 255, b = 255, a = 255;
+    Uint8 r = 255;
+    Uint8 g = 255;
+    Uint8 b = 255;
+    Uint8 a = 255;
 };
 
-struct Animation {
-    int frameCount;     
-    int currentFrame;  
-    float frameTime;   
-    float timer = 0.0f;
-    bool loop = true;
+enum class ShapeType {
+    Rectangle,
+    Circle
 };
 
-struct Rectangle {
-    float width;
-    float height;
+struct Shape {
+    ShapeType type = ShapeType::Rectangle;
+    float width = 0.0f;
+    float height = 0.0f;
+    float radius = 0.0f;
     bool filled = true;
 };
 
-//
-} // namespace ecs
+struct CollisionState {
+    bool onGround = false;
+    bool onLeftWall = false;
+    bool onRightWall = false;
+    bool onCeiling = false;
+};
+
+}

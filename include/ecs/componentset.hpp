@@ -14,6 +14,7 @@ public:
     // these are virtual because we will be using polymorphism to manage different component sets
     virtual ~IComponentSet() = default;
     virtual void entityDestroyed(EntityId entityId) = 0;
+    virtual void clear() = 0;
 
 };
 
@@ -26,7 +27,7 @@ public:
     void remove(EntityId entityId);
     ComponentType& get(EntityId entityId);
     void entityDestroyed(EntityId entityId) override;
-
+    void clear() override;
     bool has(EntityId entityId);
 private:
     std::vector<ComponentType> components_; // dense array of components
@@ -94,6 +95,14 @@ ComponentType& ComponentSet<ComponentType>::get(EntityId entityId) {
 template<typename ComponentType>
 void ComponentSet<ComponentType>::entityDestroyed(EntityId entityId) {
     remove(entityId);
+}
+
+template<typename ComponentType>
+void ComponentSet<ComponentType>::clear() {
+    components_.clear();
+    entityToIndex_.clear();
+    indexToEntity_.clear();
+    size_ = 0;
 }
 
 } // namespace ecs

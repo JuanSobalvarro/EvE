@@ -4,6 +4,7 @@ core::Game::Game() {
     ecsManager_ = std::make_unique<ecs::Manager>();
     assetManager_ = std::make_unique<assets::Manager>(renderer_);
     rendererSystem_ = std::make_unique<renderer::Renderer>();
+    physicsSystem_ = std::make_unique<ecs::PhysicsSystem>();
 }
 
 core::Game::~Game() {
@@ -39,7 +40,7 @@ bool core::Game::init(const char* title, int width, int height) {
 
     assetManager_ = std::make_unique<assets::Manager>(renderer_);
 
-    setupDemo();
+    changeScene(std::make_unique<scene::Demo>(*ecsManager_, *assetManager_, *this));
 
     isRunning_ = true;
     return true;
@@ -64,6 +65,7 @@ void core::Game::run() {
         }
 
         handleEvents();
+        handleInput();
         update(deltaTime);
         render(deltaTime);
 
@@ -78,42 +80,47 @@ void core::Game::stop() {
     isRunning_ = false;
 }
 
+void core::Game::changeScene(std::unique_ptr<scene::Scene> newScene) {
+    if (currentScene_) {
+        currentScene_->onExit();
+    }
+    currentScene_ = std::move(newScene);
+    if (currentScene_) {
+        currentScene_->onEnter();
+    }
+}
+
 void core::Game::handleEvents() {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
         if (event.type == SDL_EVENT_QUIT) {
             stop();
         }
-    }
-}
-
-void core::Game::update(float deltaTime) {
-
-    const double now = SDL_GetTicks() / 1000.0; // current time in seconds
-
-    for (auto id : ecsManager_->getActiveEntities()) {
-        // Look for our specific background (or anything with a Color and Rectangle)
-        if (ecsManager_->hasComponent<ecs::Color>(id) && ecsManager_->hasComponent<ecs::Rectangle>(id)) {
-            auto& color = ecsManager_->getComponent<ecs::Color>(id);
-            
-            color.r = static_cast<Uint8>((std::sin(now) * 0.5f + 0.5f) * 255);
-            color.g = static_cast<Uint8>((std::cos(now + M_PI / 2) * 0.5f + 0.5f) * 255);
-            color.b = static_cast<Uint8>((std::sin(now + M_PI * 2 / 3) * 0.5f + 0.5f) * 255);
+        if (currentScene_) {
+            currentScene_->handleEvents(event);
         }
     }
 }
 
-void core::Game::render(float deltaTime) {
-    rendererSystem_->update(*ecsManager_, renderer_, deltaTime);
+void core::Game::handleInput() {
+    // we can handle global input here, for example if we want to quit the game when the user presses escape
+    const bool* state = SDL_GetKeyboardState(nullptr);
+    if (state[SDL_SCANCODE_ESCAPE]) {
+        stop();
+    }
+
+    if (currentScene_) {
+        currentScene_->handleInput();
+    }
 }
 
-void core::Game::setupDemo() {
-    // background entity
-    ecs::EntityId backgroundEntity = ecsManager_->createEntity();
-    ecsManager_->addComponent<ecs::Transform>(backgroundEntity, 0.0f, 0.0f);
-    ecsManager_->addComponent<ecs::Color>(backgroundEntity, (Uint8)0, (Uint8)0, (Uint8)0); // start with black background
+void core::Game::update(float deltaTime) {
+    if (currentScene_) {
+        currentScene_->onUpdate(deltaTime);
+    }
+    physicsSystem_->update(*ecsManager_, deltaTime);
+}
 
-    int w, h;
-    SDL_GetWindowSize(window_, &w, &h);
-    ecsManager_->addComponent<ecs::Rectangle>(backgroundEntity, (float)w, (float)h, true); // filled rectangle covering the whole screen
+void core::Game::render(float deltaTime) {
+    rendererSystem_->update(*ecsManager_, renderer_, deltaTime);
 }

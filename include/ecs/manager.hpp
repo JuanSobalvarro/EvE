@@ -23,6 +23,8 @@ public:
     EntityId createEntity();
     void destroyEntity(EntityId entityId);
 
+    void clear();
+
     template<typename CT, typename... Args>
     void addComponent(EntityId entityId, Args&&... args) {
         getComponentSet<CT>()->insert(entityId, CT{std::forward<Args>(args)...});

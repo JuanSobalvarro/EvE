@@ -46,7 +46,19 @@ void ecs::Manager::destroyEntity(EntityId entityId) {
     for (auto& pair : componentSets_) {
         pair.second->entityDestroyed(entityId);
     }
+}
 
+void ecs::Manager::clear() {
+    // reset all active entities
+    while (!activeEntityList_.empty()) {
+        destroyEntity(activeEntityList_.back());
+    }
+    activeEntityList_.clear();
+
+    // clear all component sets
+    for (auto& pair : componentSets_) {
+        pair.second->clear();
+    }
 }
 
 std::vector<ecs::EntityId> ecs::Manager::getActiveEntities() const {

@@ -4,13 +4,32 @@ project(EvE)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+include(FetchContent) # fetch dependencies
+
 find_package(SDL3 REQUIRED)
 find_package(SDL3_image REQUIRED)
+
+find_package(Lua REQUIRED)
+
+FetchContent_Declare(
+    sol2
+    GIT_REPOSITORY https://github.com/ThePhd/sol2.git
+    GIT_TAG v3.3.0
+)
+FetchContent_MakeAvailable(sol2)
 
 file(GLOB_RECURSE SRC_FILES "src/*.cpp")
 
 add_executable(EvE ${SRC_FILES})
 
-target_include_directories(EvE PRIVATE "include")
+target_include_directories(EvE PRIVATE 
+    "include"
+    ${LUA_INCLUDE_DIRS}
+)
 
-target_link_libraries(EvE PRIVATE SDL3::SDL3 SDL3_image::SDL3_image)
+target_link_libraries(EvE PRIVATE 
+    SDL3::SDL3 
+    SDL3_image::SDL3_image 
+    ${LUA_LIBRARIES} 
+    sol2::sol2
+)

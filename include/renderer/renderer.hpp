@@ -11,7 +11,11 @@ class Renderer {
 public:
 
     void update(ecs::Manager& manager, SDL_Renderer* renderer, float deltaTime);
-};
 
+private:
+
+    void drawShape(SDL_Renderer* renderer, const ecs::Transform& transform, const ecs::Shape& shape);
+
+};
 
 } // namespace renderer
