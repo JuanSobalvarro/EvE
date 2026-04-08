@@ -1,6 +1,6 @@
-#include "ernest.hpp"
+#include "player.hpp"
 
-uwunya::Ernest::Ernest() {
+uwunya::Player::Player() {
     color = { 255, 255, 255, 255 };
     rect = { 0.0f, 0.0f, 1.0f, 1.0f };
 
@@ -12,14 +12,14 @@ uwunya::Ernest::Ernest() {
     right_leg = { 0.0f, 0.0f, 1.0f, 1.0f };
 }
 
-uwunya::Ernest::~Ernest() {
+uwunya::Player::~Player() {
 }
 
-SDL_FRect uwunya::Ernest::get_rect() const {
+SDL_FRect uwunya::Player::get_rect() const {
     return rect;
 }
 
-void uwunya::Ernest::draw(SDL_Renderer* renderer) {
+void uwunya::Player::draw(SDL_Renderer* renderer) {
     SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
 
     SDL_FRect body = {

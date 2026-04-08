@@ -4,10 +4,10 @@
 
 namespace uwunya {
 
-class Ernest : public Entity {
+class Player : public Entity {
 public:
-    Ernest();
-    ~Ernest();
+    Player();
+    ~Player();
 
     void draw(SDL_Renderer* renderer) override;
 
