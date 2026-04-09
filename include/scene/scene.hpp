@@ -3,6 +3,7 @@
 #include <SDL3/SDL.h>
 
 #include "ecs/manager.hpp"
+#include "ecs/physics.hpp"
 #include "assets/manager.hpp"
 
 namespace core { class Game; } // forward declaration to avoid circular dependency
@@ -11,7 +12,7 @@ namespace scene {
 
 class Scene {
 public:
-    Scene(ecs::Manager& ecsManager, assets::Manager& assetManager, core::Game& game) : ecsManager_(ecsManager), assetManager_(assetManager), game_(game) {};
+    Scene(ecs::Manager& ecsManager, assets::Manager& assetManager, ecs::PhysicsSystem& physicsSystem, core::Game& game) : ecsManager_(ecsManager), assetManager_(assetManager), physicsSystem_(physicsSystem), game_(game) {};
     virtual ~Scene() = default;
 
     virtual void onEnter() = 0;
@@ -22,6 +23,7 @@ public:
 protected:
     ecs::Manager& ecsManager_;
     assets::Manager& assetManager_;
+    ecs::PhysicsSystem& physicsSystem_;
     core::Game& game_;
 };
 

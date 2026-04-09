@@ -1,8 +1,4 @@
-local Key = {
-    A = 4,
-    D = 7,
-    SPACE = 44
-}
+local demo = {}
 
 local bg_entity = -1
 local floor_entity = -1
@@ -13,7 +9,7 @@ local ernest_entity = -1
 
 local time_passed = 0.0
 
-function on_enter()
+function demo.on_enter()
     bg_entity = createEntity()
     addTransform(bg_entity, 0.0, 0.0, 1.0, 1.0, 0.0)
     addRigidBody(bg_entity, 800.0, 600.0, true, false, 1.0, 0.5)
@@ -50,7 +46,7 @@ function on_enter()
     addCollisionState(ernest_entity)
 end
 
-function update(dt)
+function demo.update(dt)
     time_passed = time_passed + dt
     local color = getColor(bg_entity)
 
@@ -64,7 +60,7 @@ function update(dt)
     color.b = math.floor((math.sin(time_passed + 4) + 1) / 2 * 255)
 end
 
-function handle_input()
+function demo.handle_input()
     local vel = getVelocity(ernest_entity)
     local col = getCollisionState(ernest_entity)
 
@@ -100,3 +96,9 @@ function handle_input()
         col.onGround = false
     end
 end
+
+function demo.on_exit()
+    clearScene()
+end
+
+return demo

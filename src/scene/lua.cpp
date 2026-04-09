@@ -3,10 +3,10 @@
 
 namespace scene {
 
-LuaScene::LuaScene(ecs::Manager& ecsManager, assets::Manager& assetManager, core::Game& game, const std::string& scriptPath) 
-    : Scene(ecsManager, assetManager, game), scriptPath_(scriptPath) {
+LuaScene::LuaScene(ecs::Manager& ecsManager, assets::Manager& assetManager, ecs::PhysicsSystem& physicsSystem, core::Game& game, const std::string& scriptPath) 
+    : Scene(ecsManager, assetManager, physicsSystem, game), scriptPath_(scriptPath) {
     
-    lua_.open_libraries(sol::lib::base, sol::lib::package, sol::lib::math);
+    lua_.open_libraries(sol::lib::base, sol::lib::package, sol::lib::math, sol::lib::table);
     bindECS();
 }
 
@@ -91,7 +91,22 @@ void LuaScene::bindECS() {
         return state[scancode];
     });
 
+    lua_.set_function("isMouseButtonDown", [&](int button) {
+        SDL_MouseButtonFlags buttons = SDL_GetMouseState(nullptr, nullptr);
+        return (buttons & SDL_BUTTON_MASK(button)) != 0;
+    });
+
+    lua_.set_function("getMousePosition", [&]() {
+        float x, y;
+        SDL_GetMouseState(&x, &y);
+        return std::make_tuple(x, y);
+    });
+
     lua_.set_function("clearScene", [&]() { ecsManager_.clear(); });
+
+    lua_.set_function("getEntityCount", [&]() { return ecsManager_.getActiveEntities().size(); });
+
+    lua_.set_function("setWorldSize", [&](int width, int height) { physicsSystem_.setWorldSize(width, height); });
 }
 
 void LuaScene::loadAndExecute() {

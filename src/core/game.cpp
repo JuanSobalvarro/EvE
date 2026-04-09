@@ -40,7 +40,7 @@ bool core::Game::init(const char* title, int width, int height) {
 
     assetManager_ = std::make_unique<assets::Manager>(renderer_);
 
-    changeScene(std::make_unique<scene::LuaScene>(*ecsManager_, *assetManager_, *this, "assets/scripts/demo.lua"));
+    changeScene(std::make_unique<scene::LuaScene>(*ecsManager_, *assetManager_, *physicsSystem_, *this, "assets/scripts/main.lua"));
 
     isRunning_ = true;
     return true;
@@ -118,7 +118,10 @@ void core::Game::update(float deltaTime) {
     if (currentScene_) {
         currentScene_->onUpdate(deltaTime);
     }
+    float time_before_physics = SDL_GetTicks();
     physicsSystem_->update(*ecsManager_, deltaTime);
+    float time_after_physics = SDL_GetTicks();
+    std::cout << "Physics update took " << (time_after_physics - time_before_physics) << " ms" << std::endl;
 }
 
 void core::Game::render(float deltaTime) {
