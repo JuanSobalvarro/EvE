@@ -13,6 +13,7 @@ namespace ecs {
 class PhysicsSystem {
 
 public:
+    PhysicsSystem();
 
     void update(ecs::Manager& manager, float deltaTime);
 
