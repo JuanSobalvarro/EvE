@@ -19,6 +19,12 @@ void LuaScene::bindECS() {
         "Circle", ecs::ShapeType::Circle
     );
 
+    lua_.new_enum("BlendType",
+        "Normal", ecs::BlendType::Normal,
+        "Additive", ecs::BlendType::Additive,
+        "Multiply", ecs::BlendType::Multiply
+    );
+
     lua_.new_usertype<ecs::Transform>("Transform",
         "x", &ecs::Transform::x,
         "y", &ecs::Transform::y,
@@ -44,7 +50,8 @@ void LuaScene::bindECS() {
     );
 
     lua_.new_usertype<ecs::Sprite>("Sprite",
-        "texture", &ecs::Sprite::texture
+        "texture", &ecs::Sprite::texture,
+        "blend", &ecs::Sprite::blend
     );
 
     lua_.new_usertype<ecs::Color>("Color",
@@ -69,6 +76,12 @@ void LuaScene::bindECS() {
         "onCeiling", &ecs::CollisionState::onCeiling
     );
 
+    lua_.new_usertype<ecs::Geometry>("Geometry",
+        "vertices", &ecs::Geometry::vertices,
+        "indices", &ecs::Geometry::indices,
+        "texture", &ecs::Geometry::texture
+    );
+
     lua_.set_function("createEntity", [&]() { return ecsManager_.createEntity(); });
     lua_.set_function("destroyEntity", [&](ecs::EntityId id) { ecsManager_.destroyEntity(id); });
     lua_.set_function("addTransform", [&](ecs::EntityId id, float x, float y, float sx, float sy, float r) { ecsManager_.addComponent<ecs::Transform>(id, x, y, sx, sy, r); });
@@ -79,6 +92,49 @@ void LuaScene::bindECS() {
     lua_.set_function("addShape", [&](ecs::EntityId id, ecs::ShapeType t, float w, float h, float r, bool f) { ecsManager_.addComponent<ecs::Shape>(id, t, w, h, r, f); });
     lua_.set_function("addCollisionState", [&](ecs::EntityId id) { ecsManager_.addComponent<ecs::CollisionState>(id); });
 
+    lua_.set_function("addGeometryQuad", [&](ecs::EntityId id, float width, float height) {
+        std::vector<SDL_Vertex> vertices;
+        std::vector<int> indices;
+
+        vertices.push_back({{0.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}});
+        vertices.push_back({{width, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, 0.0f}});
+        vertices.push_back({{0.0f, height}, {1.0f, 1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}});
+        vertices.push_back({{width, height}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}});
+
+        indices = {0, 1, 2, 1, 3, 2};
+
+        ecsManager_.addComponent<ecs::Geometry>(id, vertices, indices, nullptr);
+    });
+
+    lua_.set_function("addGeometryCustom", [&](ecs::EntityId id, sol::table luaVertices, sol::table luaIndices) {
+        std::vector<SDL_Vertex> vertices;
+        std::vector<int> indices;
+
+        for (size_t i = 1; i <= luaVertices.size(); ++i) {
+            sol::table v = luaVertices[i];
+            SDL_Vertex vertex;
+            
+            vertex.position.x = v.get_or("x", 0.0f);
+            vertex.position.y = v.get_or("y", 0.0f);
+            
+            vertex.color.r = v.get_or("r", 1.0f);
+            vertex.color.g = v.get_or("g", 1.0f);
+            vertex.color.b = v.get_or("b", 1.0f);
+            vertex.color.a = v.get_or("a", 1.0f);
+            
+            vertex.tex_coord.x = v.get_or("u", 0.0f);
+            vertex.tex_coord.y = v.get_or("v", 0.0f);
+            
+            vertices.push_back(vertex);
+        }
+
+        for (size_t i = 1; i <= luaIndices.size(); ++i) {
+            indices.push_back(luaIndices.get<int>(i));
+        }
+
+        ecsManager_.addComponent<ecs::Geometry>(id, vertices, indices, nullptr);
+    });
+
     lua_.set_function("getTransform", [&](ecs::EntityId id) -> ecs::Transform& { return ecsManager_.getComponent<ecs::Transform>(id); });
     lua_.set_function("getVelocity", [&](ecs::EntityId id) -> ecs::Velocity& { return ecsManager_.getComponent<ecs::Velocity>(id); });
     lua_.set_function("getRigidBody", [&](ecs::EntityId id) -> ecs::RigidBody& { return ecsManager_.getComponent<ecs::RigidBody>(id); });
@@ -86,7 +142,8 @@ void LuaScene::bindECS() {
     lua_.set_function("getColor", [&](ecs::EntityId id) -> ecs::Color& { return ecsManager_.getComponent<ecs::Color>(id); });
     lua_.set_function("getShape", [&](ecs::EntityId id) -> ecs::Shape& { return ecsManager_.getComponent<ecs::Shape>(id); });
     lua_.set_function("getCollisionState", [&](ecs::EntityId id) -> ecs::CollisionState& { return ecsManager_.getComponent<ecs::CollisionState>(id); });
-
+    lua_.set_function("getGeometry", [&](ecs::EntityId id) -> ecs::Geometry& { return ecsManager_.getComponent<ecs::Geometry>(id); });
+    
     lua_.set_function("isKeyDown", [&](int scancode) {
         const bool* state = SDL_GetKeyboardState(nullptr);
         return state[scancode];
@@ -107,7 +164,7 @@ void LuaScene::bindECS() {
 
     lua_.set_function("getEntityCount", [&]() { return ecsManager_.getActiveEntities().size(); });
 
-    lua_.set_function("setWorldSize", [&](int width, int height) { physicsSystem_.setWorldSize(width, height); });
+    lua_.set_function("setWorld", [&](int width, int height, int cellSize) { physicsSystem_.setWorld(width, height, cellSize); });
 }
 
 void LuaScene::loadAndExecute() {

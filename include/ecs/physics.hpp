@@ -17,7 +17,7 @@ public:
 
     void update(ecs::Manager& manager, float deltaTime);
 
-    void setWorldSize(int width, int height);
+    void setWorld(int width, int height, int cellSize);
         
 private:
     bool checkCollision(ecs::Manager& manager, ecs::EntityId ent_a, ecs::EntityId ent_b);
@@ -26,9 +26,9 @@ private:
     void resolveCollisionY(ecs::Manager& manager, ecs::EntityId dynamic_ent, ecs::EntityId other);
 
     void updateCollisionPairs(ecs::Manager& manager, const std::vector<EntityId>& entities);
-    std::vector<EntityId> getNearbyEntities(ecs::Manager& manager, ecs::EntityId id);
+    void updateNearbyEntities(ecs::Manager& manager, ecs::EntityId id);
 
-    int cellSize_ = 64;
+    int cellSize_ = 100;
     int worldWidth_ = 1000;
     int worldHeight_ = 1000;
     int gridCols_ = 0;
@@ -36,7 +36,10 @@ private:
     std::vector<std::vector<EntityId>> spatialGrid_;
     std::unordered_map<EntityId, size_t> entityToGridIndex_;
 
+    std::vector<ecs::EntityId> nearby_; // reusable vector to avoid allocations in updateNearbyEntities
+
     bool isDynamicEntity(ecs::Manager& manager, ecs::EntityId id);
+
 };
 
 }

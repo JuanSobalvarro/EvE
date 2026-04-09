@@ -15,6 +15,8 @@ public:
 private:
 
     void drawShape(SDL_Renderer* renderer, const ecs::Transform& transform, const ecs::Shape& shape);
+    void drawSprite(SDL_Renderer* renderer, const ecs::Transform& transform, const ecs::Sprite& sprite);
+    void drawGeometry(SDL_Renderer* renderer, const ecs::Transform& transform, const ecs::Geometry& geometry);
 
 };
 

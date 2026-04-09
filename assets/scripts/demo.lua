@@ -39,7 +39,7 @@ function demo.on_enter()
 
     ernest_entity = createEntity()
     addTransform(ernest_entity, 400.0, 450.0, 1.0, 1.0, 0.0)
-    addRigidBody(ernest_entity, 50.0, 50.0, false, true, 1.0, 500.0)
+    addRigidBody(ernest_entity, 50.0, 50.0, false, true, 1.0, 500.0, 0.0, 0.0)
     addShape(ernest_entity, ShapeType.Rectangle, 50.0, 50.0, 0.0, true)
     addColor(ernest_entity, 255, 255, 255, 255)
     addVelocity(ernest_entity, 0.0, 0.0, 400.0, 500.0)
@@ -74,7 +74,7 @@ function demo.handle_input()
         return
     end
 
-    local stepSpeed = 100.0
+    local stepSpeed = 10.0
     local jumpSpeed = 300.0
 
     if isKeyDown(Key.A) then

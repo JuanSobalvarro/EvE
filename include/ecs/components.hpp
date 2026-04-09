@@ -1,6 +1,7 @@
 #pragma once
 
 #include <SDL3/SDL.h>
+#include <vector>
 
 namespace ecs {
 
@@ -30,8 +31,15 @@ struct RigidBody {
     float bounce = 0.5f;
 };
 
+enum class BlendType {
+    Normal,
+    Additive,
+    Multiply
+};
+
 struct Sprite {
     SDL_Texture* texture = nullptr;
+    BlendType blend = BlendType::Normal;
 };
 
 struct Color {
@@ -59,6 +67,12 @@ struct CollisionState {
     bool onLeftWall = false;
     bool onRightWall = false;
     bool onCeiling = false;
+};
+
+struct Geometry {
+    std::vector<SDL_Vertex> vertices;
+    std::vector<int> indices;
+    SDL_Texture* texture = nullptr;
 };
 
 }
