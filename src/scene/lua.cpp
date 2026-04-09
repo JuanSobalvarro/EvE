@@ -90,6 +90,8 @@ void LuaScene::bindECS() {
         const bool* state = SDL_GetKeyboardState(nullptr);
         return state[scancode];
     });
+
+    lua_.set_function("clearScene", [&]() { ecsManager_.clear(); });
 }
 
 void LuaScene::loadAndExecute() {
