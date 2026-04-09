@@ -70,6 +70,7 @@ void LuaScene::bindECS() {
     );
 
     lua_.set_function("createEntity", [&]() { return ecsManager_.createEntity(); });
+    lua_.set_function("destroyEntity", [&](ecs::EntityId id) { ecsManager_.destroyEntity(id); });
     lua_.set_function("addTransform", [&](ecs::EntityId id, float x, float y, float sx, float sy, float r) { ecsManager_.addComponent<ecs::Transform>(id, x, y, sx, sy, r); });
     lua_.set_function("addVelocity", [&](ecs::EntityId id, float x, float y, float mx, float my) { ecsManager_.addComponent<ecs::Velocity>(id, x, y, mx, my); });
     lua_.set_function("addRigidBody", [&](ecs::EntityId id, float w, float h, bool isStatic, bool collidable, float friction, float gravity) { ecsManager_.addComponent<ecs::RigidBody>(id, w, h, isStatic, collidable, friction, gravity); });

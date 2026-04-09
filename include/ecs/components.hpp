@@ -26,6 +26,8 @@ struct RigidBody {
     bool collidable = true;
     float friction = 1.0f;
     float gravity = 0.5f;
+    float mass = 1.0f;
+    float bounce = 0.5f;
 };
 
 struct Sprite {

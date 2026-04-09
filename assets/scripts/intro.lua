@@ -5,10 +5,11 @@ local bg_entity = -1
 local left_wall = -1
 local right_wall = -1
 local top_wall = -1
-local bottom_wall = -1
+local floor = -1
 
 function intro.on_enter()
     print("Entered intro scene")
+    setWorldSize(1000, 1000)
 
     bg_entity = createEntity()
     addTransform(bg_entity, 0.0, 0.0, 1.0, 1.0, 0.0)
@@ -29,12 +30,14 @@ function intro.on_enter()
     top_wall = createEntity()
     addTransform(top_wall, 0.0, -50.0, 1.0, 1.0, 0.0)
     addRigidBody(top_wall, 800.0, 50.0, true, true, 0.0, 0.0)
+    addColor(top_wall, 100, 100, 100, 255)
     addShape(top_wall, ShapeType.Rectangle, 800.0, 50.0, 0.0, true)
 
-    bottom_wall = createEntity()
-    addTransform(bottom_wall, 0.0, 600.0, 1.0, 1.0, 0.0)
-    addRigidBody(bottom_wall, 800.0, 50.0, true, true, 0.0, 0.0)
-    addShape(bottom_wall, ShapeType.Rectangle, 800.0, 50.0, 0.0, true)
+    floor = createEntity()
+    addTransform(floor, 0.0, 600.0, 1.0, 1.0, 0.0)
+    addRigidBody(floor, 800.0, 50.0, true, true, 0.0, 0.0, 0.0, 0.0)
+    addColor(floor, 100, 100, 100, 255)
+    addShape(floor, ShapeType.Rectangle, 800.0, 50.0, 0.0, true)
 
     for i=1,10 do
         local ball = createEntity()
@@ -64,8 +67,14 @@ function intro.handle_input()
         addColor(ball, math.random(255), math.random(255), math.random(255), 255)
         addVelocity(ball, math.random(-200, 200), math.random(-200, 200), 400.0, 500.0)
         addCollisionState(ball)
-        table.insert(balls, 1, ball)
+        table.insert(balls, #balls + 1, ball)
         print("Current entities: ", getEntityCount())
+    end
+
+    if isKeyDown(Key.SPACE) then
+        for _, ball in ipairs(balls) do
+            destroyEntity(ball)
+        end
     end
 end
 

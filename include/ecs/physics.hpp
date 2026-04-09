@@ -34,6 +34,9 @@ private:
     int gridCols_ = 0;
     int gridRows_ = 0;
     std::vector<std::vector<EntityId>> spatialGrid_;
+    std::unordered_map<EntityId, size_t> entityToGridIndex_;
+
+    bool isDynamicEntity(ecs::Manager& manager, ecs::EntityId id);
 };
 
 }
