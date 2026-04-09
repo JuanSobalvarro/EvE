@@ -3,9 +3,17 @@
 
 namespace scene {
 
-LuaScene::LuaScene(ecs::Manager& ecsManager, assets::Manager& assetManager, core::Game& game, const std::string& scriptPath) : Scene(ecsManager, assetManager, game), scriptPath_(scriptPath) {
+LuaScene::LuaScene(ecs::Manager& ecsManager, assets::Manager& assetManager, core::Game& game, const std::string& scriptPath) 
+    : Scene(ecsManager, assetManager, game), scriptPath_(scriptPath) {
+    
     lua_.open_libraries(sol::lib::base, sol::lib::package, sol::lib::math);
+    bindECS();
+}
 
+LuaScene::~LuaScene() {
+}
+
+void LuaScene::bindECS() {
     lua_.new_enum("ShapeType",
         "Rectangle", ecs::ShapeType::Rectangle,
         "Circle", ecs::ShapeType::Circle
@@ -61,10 +69,7 @@ LuaScene::LuaScene(ecs::Manager& ecsManager, assets::Manager& assetManager, core
         "onCeiling", &ecs::CollisionState::onCeiling
     );
 
-    lua_.set_function("createEntity", [&]() {
-        return ecsManager_.createEntity();
-    });
-
+    lua_.set_function("createEntity", [&]() { return ecsManager_.createEntity(); });
     lua_.set_function("addTransform", [&](ecs::EntityId id, float x, float y, float sx, float sy, float r) { ecsManager_.addComponent<ecs::Transform>(id, x, y, sx, sy, r); });
     lua_.set_function("addVelocity", [&](ecs::EntityId id, float x, float y, float mx, float my) { ecsManager_.addComponent<ecs::Velocity>(id, x, y, mx, my); });
     lua_.set_function("addRigidBody", [&](ecs::EntityId id, float w, float h, bool isStatic, bool collidable, float friction, float gravity) { ecsManager_.addComponent<ecs::RigidBody>(id, w, h, isStatic, collidable, friction, gravity); });
@@ -87,10 +92,7 @@ LuaScene::LuaScene(ecs::Manager& ecsManager, assets::Manager& assetManager, core
     });
 }
 
-LuaScene::~LuaScene() {
-}
-
-void LuaScene::onEnter() {
+void LuaScene::loadAndExecute() {
     sol::load_result script = lua_.load_file(scriptPath_);
     if (!script.valid()) {
         sol::error err = script;
@@ -105,17 +107,33 @@ void LuaScene::onEnter() {
         return;
     }
 
-    sol::protected_function onEnterFunc = lua_["on_enter"];
-    if (onEnterFunc.valid()) {
-        sol::protected_function_result result = onEnterFunc();
-        if (!result.valid()) {
-            sol::error err = result;
+    sol::protected_function enterFunc = lua_["on_enter"];
+    if (enterFunc.valid()) {
+        sol::protected_function_result enterResult = enterFunc();
+        if (!enterResult.valid()) {
+            sol::error err = enterResult;
             std::cerr << err.what() << std::endl;
         }
     }
 }
 
+void LuaScene::onEnter() {
+    std::error_code ec;
+    lastWriteTime_ = std::filesystem::last_write_time(scriptPath_, ec);
+    loadAndExecute();
+}
+
 void LuaScene::onUpdate(float deltaTime) {
+    std::error_code ec;
+    auto currentTime = std::filesystem::last_write_time(scriptPath_, ec);
+
+    if (!ec && currentTime > lastWriteTime_) {
+        lastWriteTime_ = currentTime;
+        std::cout << "Reloading script: " << scriptPath_ << std::endl;
+        ecsManager_.clear();
+        loadAndExecute();
+    }
+
     sol::protected_function updateFunc = lua_["update"];
     if (updateFunc.valid()) {
         sol::protected_function_result result = updateFunc(deltaTime);
@@ -127,6 +145,14 @@ void LuaScene::onUpdate(float deltaTime) {
 }
 
 void LuaScene::onExit() {
+    sol::protected_function exitFunc = lua_["exit"];
+    if (exitFunc.valid()) {
+        sol::protected_function_result result = exitFunc();
+        if (!result.valid()) {
+            sol::error err = result;
+            std::cerr << err.what() << std::endl;
+        }
+    }
     ecsManager_.clear();
 }
 

@@ -5,7 +5,7 @@ default:
 [group('build')]
 build:
     cmake -S . -B build
-    cmake --build build -v
+    cmake --build build
 
 [group('build')]
 build_run: build

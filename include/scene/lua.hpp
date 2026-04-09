@@ -3,6 +3,7 @@
 #define SOL_ALL_SAFETIES_ON 1
 
 #include <sol/sol.hpp>
+#include <filesystem>
 
 #include "scene/scene.hpp"
 #include "ecs/components.hpp"
@@ -18,9 +19,14 @@ public:
     void onExit() override;
     void handleEvents(const SDL_Event& event) override;
     void handleInput() override;
+
 private:
+    void bindECS();
+    void loadAndExecute();
+
     sol::state lua_;
     std::string scriptPath_;
+    std::filesystem::file_time_type lastWriteTime_;
 };
 
 }

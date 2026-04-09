@@ -24,7 +24,7 @@ function on_enter()
     addTransform(floor_entity, 0.0, 500.0, 1.0, 1.0, 0.0)
     addRigidBody(floor_entity, 800.0, 100.0, true, true, 1.0, 0.5)
     addShape(floor_entity, ShapeType.Rectangle, 800.0, 100.0, 0.0, true)
-    addColor(floor_entity, 200, 200, 200, 255)
+    addColor(floor_entity, 200, 220, 200, 255)
 
     left_wall = createEntity()
     addTransform(left_wall, -50.0, 0.0, 1.0, 1.0, 0.0)
