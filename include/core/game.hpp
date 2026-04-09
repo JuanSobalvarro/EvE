@@ -11,7 +11,7 @@
 #include "scene/scene.hpp"
 #include "ecs/physics.hpp"
 
-#include "scene/demo.hpp"
+#include "scene/lua.hpp"
 
 namespace core {
 

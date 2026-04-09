@@ -5,7 +5,7 @@ default:
 [group('build')]
 build:
     cmake -S . -B build
-    cmake --build build
+    cmake --build build -v
 
 [group('build')]
 build_run: build
@@ -14,3 +14,7 @@ build_run: build
 [group('run')]
 run:
     ./build/EvE
+
+[group('clean')]
+clean:
+    rm -rf build

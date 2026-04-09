@@ -13,7 +13,7 @@ find_package(Lua REQUIRED)
 
 FetchContent_Declare(
     sol2
-    GIT_REPOSITORY https://github.com/ThePhd/sol2.git
+    GIT_REPOSITORY https://github.com/ThePhD/sol2.git
     GIT_TAG v3.3.0
 )
 FetchContent_MakeAvailable(sol2)
@@ -24,12 +24,12 @@ add_executable(EvE ${SRC_FILES})
 
 target_include_directories(EvE PRIVATE 
     "include"
-    ${LUA_INCLUDE_DIRS}
+    ${LUA_INCLUDE_DIR}
 )
 
 target_link_libraries(EvE PRIVATE 
     SDL3::SDL3 
     SDL3_image::SDL3_image 
-    ${LUA_LIBRARIES} 
+    ${LUA_LIBRARIES} # use this instead of Lua::Lua to link the Lua library because 
     sol2::sol2
 )

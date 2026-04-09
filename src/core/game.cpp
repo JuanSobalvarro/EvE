@@ -40,7 +40,7 @@ bool core::Game::init(const char* title, int width, int height) {
 
     assetManager_ = std::make_unique<assets::Manager>(renderer_);
 
-    changeScene(std::make_unique<scene::Demo>(*ecsManager_, *assetManager_, *this));
+    changeScene(std::make_unique<scene::LuaScene>(*ecsManager_, *assetManager_, *this, "assets/scripts/demo.lua"));
 
     isRunning_ = true;
     return true;
