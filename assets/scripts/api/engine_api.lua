@@ -1,5 +1,7 @@
 ---@meta
 
+--- This file defines the API for the game engine, which is used by Lua scripts to interact with the engine.
+
 ---@enum ShapeType
 ShapeType = {
     Rectangle = 0,
