@@ -75,4 +75,12 @@ struct Geometry {
     SDL_Texture* texture = nullptr;
 };
 
+struct Camera {
+    float x = 0.0f; // Center of the camera in World Space
+    float y = 0.0f;
+    float screenWidth = 800.0f; // Your SDL window width
+    float screenHeight = 600.0f; // Your SDL window height
+    float zoom = 1.0f;
+};
+
 }

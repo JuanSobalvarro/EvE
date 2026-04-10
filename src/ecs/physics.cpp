@@ -1,4 +1,5 @@
 #include "ecs/physics.hpp"
+#include <algorithm>
 
 ecs::PhysicsSystem::PhysicsSystem() {
     setWorld(worldWidth_, worldHeight_, cellSize_);
@@ -6,154 +7,84 @@ ecs::PhysicsSystem::PhysicsSystem() {
 
 void ecs::PhysicsSystem::update(ecs::Manager& manager, float deltaTime) {
     std::vector<EntityId> entities = manager.getActiveEntities();
-
     updateCollisionPairs(manager, entities);
     
-    // update each dynamic entity that needs to check collision and move accordingly
+    float halfW = worldWidth_ / 2.0f;
+    float halfH = worldHeight_ / 2.0f;
+
     for (ecs::EntityId id : entities) {
-        if (!isDynamicEntity(manager, id)) {
-            continue;
-        }
+        if (!isDynamicEntity(manager, id)) continue;
 
         if (manager.hasComponent<ecs::CollisionState>(id)) {
             ecs::CollisionState& state = manager.getComponent<ecs::CollisionState>(id);
-            state.onGround = false;
-            state.onLeftWall = false;
-            state.onRightWall = false;
-            state.onCeiling = false;
+            state.onGround = state.onLeftWall = state.onRightWall = state.onCeiling = false;
         }
 
         ecs::Transform& transform = manager.getComponent<ecs::Transform>(id);
         ecs::Velocity& velocity = manager.getComponent<ecs::Velocity>(id);
         ecs::RigidBody& body = manager.getComponent<ecs::RigidBody>(id);
 
-        // apply gravity
         velocity.y += body.gravity * deltaTime;
-        velocity.x *= (1.0f - body.friction * deltaTime); // TODO: friction should be dependent of collision state
-
-        // clamp velocity to max speed
+        velocity.x *= (1.0f - body.friction * deltaTime);
         velocity.x = std::clamp(velocity.x, -velocity.maxSpeed_x, velocity.maxSpeed_x);
         velocity.y = std::clamp(velocity.y, -velocity.maxSpeed_y, velocity.maxSpeed_y);
         
-        // check first x
-        transform.x += velocity.x * deltaTime;
-        transform.x = std::clamp(transform.x, 0.0f, static_cast<float>(worldWidth_));
+        // X Movement & Collision
+        transform.x += velocity.x * deltaTime;     
+        transform.x = std::clamp(transform.x, -halfW, halfW - body.width);
 
-        // now check for neighbors
         updateNearbyEntities(manager, id);
         for (ecs::EntityId otherId : nearby_) {
-            if (otherId != id && manager.hasComponent<ecs::RigidBody>(otherId)) {
-                if (checkCollision(manager, id, otherId)) {
-                    resolveCollisionX(manager, id, otherId);
-                }
+            if (manager.hasComponent<ecs::RigidBody>(otherId)) {
+                if (checkCollision(manager, id, otherId)) resolveCollisionX(manager, id, otherId);
             }
         }
 
-        // check second y
+        // Y Movement & Collision
         transform.y += velocity.y * deltaTime;
-        transform.y = std::clamp(transform.y, 0.0f, static_cast<float>(worldHeight_));
+        transform.y = std::clamp(transform.y, -halfH, halfH - body.height);
 
-        // refetch neighbors in case we moved to a different cell
         updateNearbyEntities(manager, id);
         for (ecs::EntityId otherId : nearby_) {
-            if (otherId != id && manager.hasComponent<ecs::RigidBody>(otherId)) {
-                if (checkCollision(manager, id, otherId)) {
-                    resolveCollisionY(manager, id, otherId);
-                }
+            if (manager.hasComponent<ecs::RigidBody>(otherId)) {
+                if (checkCollision(manager, id, otherId)) resolveCollisionY(manager, id, otherId);
             }
         }
     }
 }
 
-bool ecs::PhysicsSystem::checkCollision(ecs::Manager& manager, ecs::EntityId ent_a, ecs::EntityId ent_b) {
-    const ecs::RigidBody& body_a = manager.getComponent<ecs::RigidBody>(ent_a);
-    const ecs::RigidBody& body_b = manager.getComponent<ecs::RigidBody>(ent_b);
-    const ecs::Transform& transform_a = manager.getComponent<ecs::Transform>(ent_a);
-    const ecs::Transform& transform_b = manager.getComponent<ecs::Transform>(ent_b);
+// Helper to convert World Space (-halfW to +halfW) to Grid Space (0 to gridCols)
+int ecs::PhysicsSystem::getGridIndex(float x, float y) const {
+    int col = static_cast<int>((x + (worldWidth_ / 2.0f)) / cellSize_);
+    int row = static_cast<int>((y + (worldHeight_ / 2.0f)) / cellSize_);
     
-    if (!body_a.collidable || !body_b.collidable) {
-        return false;
-    }
+    col = std::clamp(col, 0, gridCols_ - 1);
+    row = std::clamp(row, 0, gridRows_ - 1);
     
-    bool collisionX = transform_a.x < transform_b.x + body_b.width &&
-                      transform_a.x + body_a.width > transform_b.x;
-    bool collisionY = transform_a.y < transform_b.y + body_b.height &&
-                      transform_a.y + body_a.height > transform_b.y;
-
-    return collisionX && collisionY;
-}
-
-void ecs::PhysicsSystem::resolveCollisionX(ecs::Manager& manager, ecs::EntityId dynamic_ent, ecs::EntityId other) {
-    ecs::Transform& dynTrans = manager.getComponent<ecs::Transform>(dynamic_ent);
-    ecs::Velocity& dynVel = manager.getComponent<ecs::Velocity>(dynamic_ent);
-    const ecs::RigidBody& dynBody = manager.getComponent<ecs::RigidBody>(dynamic_ent);
-
-    const ecs::Transform& othTrans = manager.getComponent<ecs::Transform>(other);
-    const ecs::RigidBody& othBody = manager.getComponent<ecs::RigidBody>(other);
-
-    if (dynVel.x > 0.0f) {
-        dynTrans.x = othTrans.x - dynBody.width;
-        if (manager.hasComponent<ecs::CollisionState>(dynamic_ent)) {
-            manager.getComponent<ecs::CollisionState>(dynamic_ent).onRightWall = true;
-        }
-    } else if (dynVel.x < 0.0f) {
-        dynTrans.x = othTrans.x + othBody.width;
-        if (manager.hasComponent<ecs::CollisionState>(dynamic_ent)) {
-            manager.getComponent<ecs::CollisionState>(dynamic_ent).onLeftWall = true;
-        }
-    }
-    dynVel.x = dynBody.mass * dynVel.x * dynBody.bounce * -1.0f; // simple bounce effect
-}
-
-void ecs::PhysicsSystem::resolveCollisionY(ecs::Manager& manager, ecs::EntityId dynamic_ent, ecs::EntityId other) {
-    ecs::Transform& dynTrans = manager.getComponent<ecs::Transform>(dynamic_ent);
-    ecs::Velocity& dynVel = manager.getComponent<ecs::Velocity>(dynamic_ent);
-    const ecs::RigidBody& dynBody = manager.getComponent<ecs::RigidBody>(dynamic_ent);
-
-    const ecs::Transform& othTrans = manager.getComponent<ecs::Transform>(other);
-    const ecs::RigidBody& othBody = manager.getComponent<ecs::RigidBody>(other);
-
-    if (dynVel.y > 0.0f) {
-        dynTrans.y = othTrans.y - dynBody.height;
-        if (manager.hasComponent<ecs::CollisionState>(dynamic_ent)) {
-            manager.getComponent<ecs::CollisionState>(dynamic_ent).onGround = true;
-        }
-    } else if (dynVel.y < 0.0f) {
-        dynTrans.y = othTrans.y + othBody.height;
-        if (manager.hasComponent<ecs::CollisionState>(dynamic_ent)) {
-            manager.getComponent<ecs::CollisionState>(dynamic_ent).onCeiling = true;
-
-        }
-    }
-    dynVel.y = dynBody.mass * dynVel.y * dynBody.bounce * -1.0f; // simple bounce effect
+    return row * gridCols_ + col;
 }
 
 void ecs::PhysicsSystem::updateCollisionPairs(ecs::Manager& manager, const std::vector<EntityId>& entities) {
-    for (auto& row : spatialGrid_) {
-        row.clear();
-    }
+    for (auto& cell : spatialGrid_) cell.clear();
 
-    // assign entities to grid cells
     for (ecs::EntityId id : entities) {
         if (manager.hasComponent<ecs::RigidBody>(id) && manager.hasComponent<ecs::Transform>(id)) {
-            const ecs::RigidBody& body = manager.getComponent<ecs::RigidBody>(id);
+            const auto& body = manager.getComponent<ecs::RigidBody>(id);
+            if (!body.collidable) continue;
 
-            if (!body.collidable) {
-                continue;
-            }
+            const auto& transform = manager.getComponent<ecs::Transform>(id);
 
-            const ecs::Transform& transform = manager.getComponent<ecs::Transform>(id);
+            float halfW = worldWidth_ / 2.0f;
+            float halfH = worldHeight_ / 2.0f;
 
-            int startCol = std::clamp(static_cast<int>(transform.x) / cellSize_, 0, gridCols_ - 1);
-            int startRow = std::clamp(static_cast<int>(transform.y) / cellSize_, 0, gridRows_ - 1);
-            
-            int endCol = std::clamp(static_cast<int>(transform.x + body.width) / cellSize_, 0, gridCols_ - 1);
-            int endRow = std::clamp(static_cast<int>(transform.y + body.height) / cellSize_, 0, gridRows_ - 1);
+            int startCol = std::clamp(static_cast<int>((transform.x + halfW) / cellSize_), 0, gridCols_ - 1);
+            int startRow = std::clamp(static_cast<int>((transform.y + halfH) / cellSize_), 0, gridRows_ - 1);
+            int endCol = std::clamp(static_cast<int>((transform.x + body.width + halfW) / cellSize_), 0, gridCols_ - 1);
+            int endRow = std::clamp(static_cast<int>((transform.y + body.height + halfH) / cellSize_), 0, gridRows_ - 1);
 
-            // insert into every cell the entity touches
-            for (int row = startRow; row <= endRow; ++row) {
-                for (int col = startCol; col <= endCol; ++col) {
-                    spatialGrid_[row * gridCols_ + col].push_back(id);
+            for (int r = startRow; r <= endRow; ++r) {
+                for (int c = startCol; c <= endCol; ++c) {
+                    spatialGrid_[r * gridCols_ + c].push_back(id);
                 }
             }
         }
@@ -162,28 +93,24 @@ void ecs::PhysicsSystem::updateCollisionPairs(ecs::Manager& manager, const std::
 
 void ecs::PhysicsSystem::updateNearbyEntities(ecs::Manager& manager, ecs::EntityId id) {
     nearby_.clear();
+    if (!manager.hasComponent<ecs::Transform>(id) || !manager.hasComponent<ecs::RigidBody>(id)) return;
 
-    if (!manager.hasComponent<ecs::Transform>(id) || !manager.hasComponent<ecs::RigidBody>(id)) {
-        return;
-    }
+    const auto& transform = manager.getComponent<ecs::Transform>(id);
+    const auto& body = manager.getComponent<ecs::RigidBody>(id);
 
-    ecs::Transform& transform = manager.getComponent<ecs::Transform>(id);
-    ecs::RigidBody& body = manager.getComponent<ecs::RigidBody>(id);
+    float halfW = worldWidth_ / 2.0f;
+    float halfH = worldHeight_ / 2.0f;
 
-    int startCol = std::clamp(static_cast<int>(transform.x) / cellSize_, 0, gridCols_ - 1);
-    int startRow = std::clamp(static_cast<int>(transform.y) / cellSize_, 0, gridRows_ - 1);
-    int endCol = std::clamp(static_cast<int>(transform.x + body.width) / cellSize_, 0, gridCols_ - 1);
-    int endRow = std::clamp(static_cast<int>(transform.y + body.height) / cellSize_, 0, gridCols_ - 1);
+    int startCol = std::clamp(static_cast<int>((transform.x + halfW) / cellSize_), 0, gridCols_ - 1);
+    int startRow = std::clamp(static_cast<int>((transform.y + halfH) / cellSize_), 0, gridRows_ - 1);
+    int endCol = std::clamp(static_cast<int>((transform.x + body.width + halfW) / cellSize_), 0, gridCols_ - 1);
+    int endRow = std::clamp(static_cast<int>((transform.y + body.height + halfH) / cellSize_), 0, gridRows_ - 1);
 
-    for (int row = startRow; row <= endRow; ++row) {
-        for (int col = startCol; col <= endCol; ++col) {
-            int index = row * gridCols_ + col;
-            if (index >= 0 && index < spatialGrid_.size()) {
-                for (EntityId otherId : spatialGrid_[index]) {
-                    if (otherId != id) {
-                        nearby_.push_back(otherId);
-                    }
-                }
+    for (int r = startRow; r <= endRow; ++r) {
+        for (int c = startCol; c <= endCol; ++c) {
+            const auto& cell = spatialGrid_[r * gridCols_ + c];
+            for (EntityId otherId : cell) {
+                if (otherId != id) nearby_.push_back(otherId);
             }
         }
     }
@@ -192,28 +119,63 @@ void ecs::PhysicsSystem::updateNearbyEntities(ecs::Manager& manager, ecs::Entity
     nearby_.erase(std::unique(nearby_.begin(), nearby_.end()), nearby_.end());
 }
 
+void ecs::PhysicsSystem::resolveCollisionX(ecs::Manager& manager, ecs::EntityId dynamic_ent, ecs::EntityId other) {
+    auto& dynTrans = manager.getComponent<ecs::Transform>(dynamic_ent);
+    auto& dynVel = manager.getComponent<ecs::Velocity>(dynamic_ent);
+    const auto& dynBody = manager.getComponent<ecs::RigidBody>(dynamic_ent);
+    const auto& othTrans = manager.getComponent<ecs::Transform>(other);
+    const auto& othBody = manager.getComponent<ecs::RigidBody>(other);
+
+    if (dynVel.x > 0.0f) {
+        dynTrans.x = othTrans.x - dynBody.width - 0.001f;
+        if (manager.hasComponent<ecs::CollisionState>(dynamic_ent)) manager.getComponent<ecs::CollisionState>(dynamic_ent).onRightWall = true;
+    } else {
+        dynTrans.x = othTrans.x + othBody.width + 0.001f;
+        if (manager.hasComponent<ecs::CollisionState>(dynamic_ent)) manager.getComponent<ecs::CollisionState>(dynamic_ent).onLeftWall = true;
+    }
+    dynVel.x *= -dynBody.bounce;
+}
+
+void ecs::PhysicsSystem::resolveCollisionY(ecs::Manager& manager, ecs::EntityId dynamic_ent, ecs::EntityId other) {
+    auto& dynTrans = manager.getComponent<ecs::Transform>(dynamic_ent);
+    auto& dynVel = manager.getComponent<ecs::Velocity>(dynamic_ent);
+    const auto& dynBody = manager.getComponent<ecs::RigidBody>(dynamic_ent);
+    const auto& othTrans = manager.getComponent<ecs::Transform>(other);
+    const auto& othBody = manager.getComponent<ecs::RigidBody>(other);
+
+    if (dynVel.y > 0.0f) {
+        dynTrans.y = othTrans.y - dynBody.height - 0.001f;
+        if (manager.hasComponent<ecs::CollisionState>(dynamic_ent)) manager.getComponent<ecs::CollisionState>(dynamic_ent).onGround = true;
+    } else {
+        dynTrans.y = othTrans.y + othBody.height + 0.001f;
+        if (manager.hasComponent<ecs::CollisionState>(dynamic_ent)) manager.getComponent<ecs::CollisionState>(dynamic_ent).onCeiling = true;
+    }
+    dynVel.y *= -dynBody.bounce;
+}
+
 void ecs::PhysicsSystem::setWorld(int width, int height, int cellSize) {
     worldWidth_ = width;
     worldHeight_ = height;
-
     cellSize_ = cellSize;
+    gridCols_ = std::max(1, (int)std::ceil((float)worldWidth_ / cellSize_));
+    gridRows_ = std::max(1, (int)std::ceil((float)worldHeight_ / cellSize_));
+    spatialGrid_.assign(gridCols_ * gridRows_, {});
+}
 
-    gridCols_ = std::ceil((float)worldWidth_ / cellSize_);
-    gridRows_ = std::ceil((float)worldHeight_ / cellSize_);
+bool ecs::PhysicsSystem::checkCollision(ecs::Manager& manager, ecs::EntityId ent_a, ecs::EntityId ent_b) {
+    const auto& bA = manager.getComponent<ecs::RigidBody>(ent_a);
+    const auto& bB = manager.getComponent<ecs::RigidBody>(ent_b);
+    if (!bA.collidable || !bB.collidable) return false;
+
+    const auto& tA = manager.getComponent<ecs::Transform>(ent_a);
+    const auto& tB = manager.getComponent<ecs::Transform>(ent_b);
     
-    spatialGrid_.resize(gridCols_ * gridRows_);
+    return (tA.x < tB.x + bB.width && tA.x + bA.width > tB.x &&
+            tA.y < tB.y + bB.height && tA.y + bA.height > tB.y);
 }
 
 bool ecs::PhysicsSystem::isDynamicEntity(ecs::Manager& manager, ecs::EntityId id) {
-    if (!manager.hasComponent<ecs::RigidBody>(id))
-        return false;
-
-    if (manager.getComponent<ecs::RigidBody>(id).isStatic)
-        return false;
-
-    // if it has no velocity or transform we cant move it so consider it non dynamic
-    if (!manager.hasComponent<ecs::Velocity>(id) || !manager.hasComponent<ecs::Transform>(id))
-        return false;
-    
-    return true;
+    if (!manager.hasComponent<ecs::RigidBody>(id)) return false;
+    const auto& body = manager.getComponent<ecs::RigidBody>(id);
+    return (!body.isStatic && manager.hasComponent<ecs::Velocity>(id) && manager.hasComponent<ecs::Transform>(id));
 }

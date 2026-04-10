@@ -4,6 +4,7 @@
 
 #include "ecs/manager.hpp"
 #include "ecs/physics.hpp"
+#include "renderer/renderer.hpp"
 #include "assets/manager.hpp"
 
 namespace core { class Game; } // forward declaration to avoid circular dependency
@@ -12,7 +13,7 @@ namespace scene {
 
 class Scene {
 public:
-    Scene(ecs::Manager& ecsManager, assets::Manager& assetManager, ecs::PhysicsSystem& physicsSystem, core::Game& game) : ecsManager_(ecsManager), assetManager_(assetManager), physicsSystem_(physicsSystem), game_(game) {};
+    Scene(ecs::Manager& ecsManager, assets::Manager& assetManager, ecs::PhysicsSystem& physicsSystem, renderer::Renderer& rendererSystem, core::Game& game) : ecsManager_(ecsManager), assetManager_(assetManager), physicsSystem_(physicsSystem), rendererSystem_(rendererSystem), game_(game) {};
     virtual ~Scene() = default;
 
     virtual void onEnter() = 0;
@@ -23,6 +24,7 @@ public:
 protected:
     ecs::Manager& ecsManager_;
     assets::Manager& assetManager_;
+    renderer::Renderer& rendererSystem_;
     ecs::PhysicsSystem& physicsSystem_;
     core::Game& game_;
 };

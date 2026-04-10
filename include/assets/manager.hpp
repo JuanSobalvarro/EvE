@@ -11,13 +11,12 @@ namespace assets {
 
 class Manager {
 public:
-    Manager(SDL_Renderer* renderer);
+    Manager();
     ~Manager(); 
 
-    SDL_Texture* loadTexture(const std::string& filePath);
+    SDL_Texture* loadTexture(const std::string& filePath, SDL_Renderer* renderer);
 
 private:
-    SDL_Renderer* renderer_;
     std::unordered_map<std::string, SDL_Texture*> textures_; // map of texture paths to SDL_Texture pointers
 };
 

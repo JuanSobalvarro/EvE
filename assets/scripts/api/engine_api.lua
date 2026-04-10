@@ -66,6 +66,13 @@ BlendType = {
 ---@field indices table
 ---@field texture userdata
 
+---@class Camera
+---@field x number
+---@field y number
+---@field screenWidth number
+---@field screenHeight number
+---@field zoom number
+
 ---@return integer
 function createEntity() end
 
@@ -94,10 +101,14 @@ function addVelocity(id, x, y, mx, my) end
 ---@param collidable boolean
 ---@param friction number
 ---@param gravity number
-function addRigidBody(id, w, h, isStatic, collidable, friction, gravity) end
+---@param mass number
+---@param bounce number
+function addRigidBody(id, w, h, isStatic, collidable, friction, gravity, mass, bounce) end
 
 ---@param id integer
-function addSprite(id) end
+---@param texturePath string
+---@param blend BlendType
+function addSprite(id, texturePath, blend) end
 
 ---@param id integer
 ---@param r integer
@@ -122,10 +133,26 @@ function addCollisionState(id) end
 ---@param height number
 function addGeometryQuad(id, width, height) end
 
+--@param id integer
+--@param radius number
+--@param r integer
+--@param g integer
+--@param b integer
+--@param a integer
+function addGeometryOrb(id, radius, r, g, b, a) end
+
 ---@param id integer
 ---@param vertices table
 ---@param indices table
 function addGeometryCustom(id, vertices, indices) end
+
+---@param id integer
+---@param x number
+---@param y number
+---@param screenWidth number
+---@param screenHeight number
+---@param zoom number
+function addCamera(id, x, y, screenWidth, screenHeight, zoom) end
 
 ---@param id integer
 ---@return Transform

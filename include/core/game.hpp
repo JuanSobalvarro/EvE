@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 #include <cmath>
+#include <iostream>
 
 #include "ecs/manager.hpp"
 #include "assets/manager.hpp"
@@ -31,9 +32,7 @@ private:
     void handleInput(); // handle global input like quitting, pausing, etc. not scene specific input
     void update(float deltaTime);
     void render(float deltaTime);
-
-    SDL_Window* window_ = nullptr;
-    SDL_Renderer* renderer_ = nullptr;
+    
     bool isRunning_ = false;
 
     std::unique_ptr<ecs::Manager> ecsManager_;

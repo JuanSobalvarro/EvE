@@ -8,11 +8,13 @@
 #include "scene/scene.hpp"
 #include "ecs/components.hpp"
 
+namespace core { class Game; } // forward declaration to avoid circular dependency
+
 namespace scene {
 
 class LuaScene : public Scene {
 public:
-    LuaScene(ecs::Manager& ecsManager, assets::Manager& assetManager, ecs::PhysicsSystem& physicsSystem, core::Game& game, const std::string& scriptPath);
+    LuaScene(ecs::Manager& ecsManager, assets::Manager& assetManager, ecs::PhysicsSystem& physicsSystem, renderer::Renderer& rendererSystem, core::Game& game, const std::string& scriptPath);
     ~LuaScene() override;
     void onEnter() override;
     void onUpdate(float deltaTime) override;

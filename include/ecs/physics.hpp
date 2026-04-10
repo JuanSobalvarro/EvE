@@ -40,6 +40,7 @@ private:
 
     bool isDynamicEntity(ecs::Manager& manager, ecs::EntityId id);
 
+    int getGridIndex(float x, float y) const;
 };
 
 }

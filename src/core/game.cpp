@@ -2,21 +2,24 @@
 
 core::Game::Game() {
     ecsManager_ = std::make_unique<ecs::Manager>();
-    assetManager_ = std::make_unique<assets::Manager>(renderer_);
-    rendererSystem_ = std::make_unique<renderer::Renderer>();
+    assetManager_ = std::make_unique<assets::Manager>();
     physicsSystem_ = std::make_unique<ecs::PhysicsSystem>();
 }
 
 core::Game::~Game() {
-    // clean up SDL resources
-    if (renderer_) {
-        SDL_DestroyRenderer(renderer_);
-        renderer_ = nullptr;
-    }
-    if (window_) {
-        SDL_DestroyWindow(window_);
-        window_ = nullptr;
-    }
+    std::cout << "[GAME] Shutting down game and cleaning up resources..." << std::endl;
+
+    currentScene_.reset();
+    assetManager_.reset(); // destroy first the textures since it need the renderer pointer to be alive
+    
+    // ecs
+    physicsSystem_.reset();
+    ecsManager_.reset();
+    
+    // when destroying renderer system we destroy the SDL_renderer and window, so
+    // we can safely do SDL Quit after that
+    rendererSystem_.reset();
+    
     SDL_Quit();
 }
 
@@ -26,21 +29,9 @@ bool core::Game::init(const char* title, int width, int height) {
         return false;
     }
 
-    window_ = SDL_CreateWindow(title, width, height, 0);
-    if (!window_) {
-        std::cerr << "Failed to create window: " << SDL_GetError() << std::endl;
-        return false;
-    }
+    rendererSystem_ = std::make_unique<renderer::Renderer>(title, width, height);
 
-    renderer_ = SDL_CreateRenderer(window_, nullptr);
-    if (!renderer_) {
-        std::cerr << "Failed to create renderer: " << SDL_GetError() << std::endl;
-        return false;
-    }
-
-    assetManager_ = std::make_unique<assets::Manager>(renderer_);
-
-    changeScene(std::make_unique<scene::LuaScene>(*ecsManager_, *assetManager_, *physicsSystem_, *this, "assets/scripts/main.lua"));
+    changeScene(std::make_unique<scene::LuaScene>(*ecsManager_, *assetManager_, *physicsSystem_, *rendererSystem_, *this, "assets/scripts/main.lua"));
 
     isRunning_ = true;
     return true;
@@ -106,6 +97,7 @@ void core::Game::handleInput() {
     // we can handle global input here, for example if we want to quit the game when the user presses escape
     const bool* state = SDL_GetKeyboardState(nullptr);
     if (state[SDL_SCANCODE_ESCAPE]) {
+        std::cout << "[GAME::handleInput] Calling stop()" << std::endl;
         stop();
     }
 
@@ -125,5 +117,5 @@ void core::Game::update(float deltaTime) {
 }
 
 void core::Game::render(float deltaTime) {
-    rendererSystem_->update(*ecsManager_, renderer_, deltaTime);
+    rendererSystem_->update(*ecsManager_, deltaTime);
 }

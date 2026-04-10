@@ -3,10 +3,10 @@
 
 namespace scene {
 
-LuaScene::LuaScene(ecs::Manager& ecsManager, assets::Manager& assetManager, ecs::PhysicsSystem& physicsSystem, core::Game& game, const std::string& scriptPath) 
-    : Scene(ecsManager, assetManager, physicsSystem, game), scriptPath_(scriptPath) {
+LuaScene::LuaScene(ecs::Manager& ecsManager, assets::Manager& assetManager, ecs::PhysicsSystem& physicsSystem, renderer::Renderer& rendererSystem, core::Game& game, const std::string& scriptPath) 
+    : Scene(ecsManager, assetManager, physicsSystem, rendererSystem, game), scriptPath_(scriptPath) {
     
-    lua_.open_libraries(sol::lib::base, sol::lib::package, sol::lib::math, sol::lib::table);
+    lua_.open_libraries(sol::lib::base, sol::lib::package, sol::lib::math, sol::lib::table, sol::lib::os);
     bindECS();
 }
 
@@ -86,8 +86,16 @@ void LuaScene::bindECS() {
     lua_.set_function("destroyEntity", [&](ecs::EntityId id) { ecsManager_.destroyEntity(id); });
     lua_.set_function("addTransform", [&](ecs::EntityId id, float x, float y, float sx, float sy, float r) { ecsManager_.addComponent<ecs::Transform>(id, x, y, sx, sy, r); });
     lua_.set_function("addVelocity", [&](ecs::EntityId id, float x, float y, float mx, float my) { ecsManager_.addComponent<ecs::Velocity>(id, x, y, mx, my); });
-    lua_.set_function("addRigidBody", [&](ecs::EntityId id, float w, float h, bool isStatic, bool collidable, float friction, float gravity) { ecsManager_.addComponent<ecs::RigidBody>(id, w, h, isStatic, collidable, friction, gravity); });
-    lua_.set_function("addSprite", [&](ecs::EntityId id) { ecsManager_.addComponent<ecs::Sprite>(id); });
+    lua_.set_function("addRigidBody", [&](ecs::EntityId id, float w, float h, bool isStatic, bool collidable, float friction, float gravity, float mass, float bounce) { ecsManager_.addComponent<ecs::RigidBody>(id, w, h, isStatic, collidable, friction, gravity, mass, bounce); });
+    lua_.set_function("addSprite", [&](ecs::EntityId id, const std::string& path, ecs::BlendType blend) {
+        SDL_Texture* tex = assetManager_.loadTexture(path, rendererSystem_.getRenderer());
+        
+        if (tex) {
+            ecsManager_.addComponent<ecs::Sprite>(id, tex, blend);
+        } else {
+            std::cerr << "Failed to load sprite: " << path << std::endl;
+        }
+    });
     lua_.set_function("addColor", [&](ecs::EntityId id, Uint8 r, Uint8 g, Uint8 b, Uint8 a) { ecsManager_.addComponent<ecs::Color>(id, r, g, b, a); });
     lua_.set_function("addShape", [&](ecs::EntityId id, ecs::ShapeType t, float w, float h, float r, bool f) { ecsManager_.addComponent<ecs::Shape>(id, t, w, h, r, f); });
     lua_.set_function("addCollisionState", [&](ecs::EntityId id) { ecsManager_.addComponent<ecs::CollisionState>(id); });
@@ -102,6 +110,35 @@ void LuaScene::bindECS() {
         vertices.push_back({{width, height}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}});
 
         indices = {0, 1, 2, 1, 3, 2};
+
+        ecsManager_.addComponent<ecs::Geometry>(id, vertices, indices, nullptr);
+    });
+
+    lua_.set_function("addGeometryOrb", [&](ecs::EntityId id, float radius, Uint8 r, Uint8 g, Uint8 b, Uint8 a) {
+        std::vector<SDL_Vertex> vertices;
+        std::vector<int> indices;
+
+        int segments = 32; // How smooth the circle is
+        
+        // center vertex
+        vertices.push_back({{radius, radius}, {r / 255.0f, g / 255.0f, b / 255.0f, a / 255.0f}, {0.5f, 0.5f}});
+
+        // Outer edge vertices (Zero opacity for the soft fade)
+        for (int i = 0; i < segments; ++i) {
+            float angle = (i * 2.0f * M_PI) / segments;
+            float x = radius + std::cos(angle) * radius;
+            float y = radius + std::sin(angle) * radius;
+            
+            // alpha is 0 
+            vertices.push_back({{x, y}, {r / 255.0f, g / 255.0f, b / 255.0f, 0.0f}, {0.5f, 0.5f}});
+        }
+
+        // Connect the dots using triangle indices
+        for (int i = 1; i <= segments; ++i) {
+            indices.push_back(0); // Center point
+            indices.push_back(i); // Current edge point
+            indices.push_back((i % segments) + 1); // Next edge point (wraps around to 1 at the end)
+        }
 
         ecsManager_.addComponent<ecs::Geometry>(id, vertices, indices, nullptr);
     });
@@ -133,6 +170,9 @@ void LuaScene::bindECS() {
         }
 
         ecsManager_.addComponent<ecs::Geometry>(id, vertices, indices, nullptr);
+    });
+    lua_.set_function("addCamera", [&](ecs::EntityId id, float x, float y, float screenWidth, float screenHeight, float zoom) {
+        ecsManager_.addComponent<ecs::Camera>(id, x, y, screenWidth, screenHeight, zoom);
     });
 
     lua_.set_function("getTransform", [&](ecs::EntityId id) -> ecs::Transform& { return ecsManager_.getComponent<ecs::Transform>(id); });
