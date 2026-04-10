@@ -19,7 +19,7 @@ local active_scene_name = "intro" --- this holds the name of the active_scene wh
 function change_scene(new_scene_name)
     if active_scene and active_scene.on_exit then
         active_scene.on_exit()
-        clearScene()
+        --- clearScene() --- IGNORE --- why ignore? because we could have global entities
     end
 
     -- clear lua cache

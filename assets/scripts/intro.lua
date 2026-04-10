@@ -25,7 +25,7 @@ local function spawn_orb()
     local orb = createEntity()
     addTransform(orb, math.random(-400, 400), math.random(300, 350), 1.0, 1.0, 0.0)
     addRigidBody(orb, 100, 100, false, false, 0.0, 0.0, 0.0, 0.0)
-    addGeometryOrb(orb, 50, 0, 0, 255, 255)
+    addGeometryOrb(orb, 50, 0, 0, 255, 100)
     
     local drift_x = math.random(-100, 100)
     addVelocity(orb, drift_x, -100.0, 400.0, 500.0)
@@ -105,6 +105,8 @@ function intro.update(dt)
                 local fade_out_start = fade_in_duration + hold_duration
                 alpha_factor = 1.0 - smoothstep(fade_out_start, fade_out_start + fade_out_duration, elapsed_time)
             else
+                --- if we reached 0.0 then change to menu
+                change_scene("menu")
                 alpha_factor = 0.0
             end
 
@@ -120,6 +122,19 @@ function intro.handle_input()
 end
 
 function intro.on_exit()
+    --- fade out orbs and bg_entity
+    for _, orb in ipairs(orbs) do
+        local color = getColor(orb)
+        if color then
+            color.a = 0
+        end
+    end
+    local bg_color = getColor(bg_entity)
+    if bg_color then
+        bg_color.a = 0
+    end
+
+    clearScene()
 end
 
 return intro

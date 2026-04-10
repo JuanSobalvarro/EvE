@@ -11,6 +11,7 @@ struct Transform {
     float scaleX = 1.0f;
     float scaleY = 1.0f;
     float rotation = 0.0f; 
+    int zIndex = 0; // for rendering order
 };
 
 struct Velocity {
@@ -82,6 +83,11 @@ struct Camera {
     float screenWidth = 800.0f; // Your SDL window width
     float screenHeight = 600.0f; // Your SDL window height
     float zoom = 1.0f;
+};
+
+// HUD tells the renderer that this entity corresponds to a UI element
+struct HUD {
+    bool interactive = false; // if true this entity will be considered for input events
 };
 
 }

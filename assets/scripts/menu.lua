@@ -2,6 +2,7 @@ local menu = {}
 
 function menu.on_enter()
     print("Entered menu scene")
+    
 end
 
 function menu.update(dt)

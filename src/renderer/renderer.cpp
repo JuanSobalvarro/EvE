@@ -39,9 +39,23 @@ void renderer::Renderer::update(ecs::Manager& manager, float deltaTime) {
     SDL_SetRenderDrawColor(renderer_, 0, 0, 0, 255);
     SDL_RenderClear(renderer_);
 
+    std::vector<ecs::EntityId> entities = manager.getActiveEntities();
+
+    // sort entities based on zIndex for correct rendering order
+    std::sort(entities.begin(), entities.end(), [&manager](ecs::EntityId a, ecs::EntityId b) {
+        int zA = manager.hasComponent<ecs::Transform>(a) ? manager.getComponent<ecs::Transform>(a).zIndex : 0;
+        int zB = manager.hasComponent<ecs::Transform>(b) ? manager.getComponent<ecs::Transform>(b).zIndex : 0;
+
+        if (zA == zB) {
+            return a < b; // if same zIndex, sort by entity ID to ensure consistent order
+        }
+        
+        return zA < zB;
+    });
+
     ecs::Camera activeCamera;
     bool hasCamera = false;
-    for (auto id : manager.getActiveEntities()) {
+    for (auto id : entities) {
         if (manager.hasComponent<ecs::Camera>(id)) {
             activeCamera = manager.getComponent<ecs::Camera>(id);
             hasCamera = true;
@@ -55,17 +69,21 @@ void renderer::Renderer::update(ecs::Manager& manager, float deltaTime) {
     float halfScreenWidth = hasCamera ? (activeCamera.screenWidth / 2.0f) : 400.0f;
     float halfScreenHeight = hasCamera ? (activeCamera.screenHeight / 2.0f) : 300.0f;
 
-    for (auto id : manager.getActiveEntities()) {
+    for (auto id : entities) {
         if (!manager.hasComponent<ecs::Transform>(id)) continue;
 
         const ecs::Transform& worldTransform = manager.getComponent<ecs::Transform>(id);
         
-        // 2. Create a copy of the transform to calculate SCREEN space
         ecs::Transform screenTransform = worldTransform;
         
-        // 3. Shift the entity relative to the camera, then center it on the screen
-        screenTransform.x = (worldTransform.x - camX) + halfScreenWidth;
-        screenTransform.y = (worldTransform.y - camY) + halfScreenHeight;
+        // For HUD elements, we ignore camera position and zoom, so they stay fixed on the screen
+        if (manager.hasComponent<ecs::HUD>(id)) {
+            screenTransform.x = worldTransform.x;
+            screenTransform.y = worldTransform.y;
+        } else {
+            screenTransform.x = (worldTransform.x - camX) + halfScreenWidth;
+            screenTransform.y = (worldTransform.y - camY) + halfScreenHeight;
+        }
     
         if (manager.hasComponent<ecs::Color>(id) && manager.hasComponent<ecs::Shape>(id)) {
             const ecs::Color& color = manager.getComponent<ecs::Color>(id);
@@ -138,7 +156,7 @@ void renderer::Renderer::drawSprite(const ecs::Transform& transform, const ecs::
         SDL_RenderTextureRotated(renderer_, sprite.texture, nullptr, &destRect, transform.rotation, nullptr, SDL_FLIP_NONE);
     } else {
         SDL_RenderTexture(renderer_, sprite.texture, nullptr, &destRect);
-        std::cout << "Drawing sprite at (" << destRect.x << ", " << destRect.y << ") with size (" << destRect.w << ", " << destRect.h << ")\n";
+        // std::cout << "Drawing sprite at (" << destRect.x << ", " << destRect.y << ") with size (" << destRect.w << ", " << destRect.h << ")\n";
     }
 }
 

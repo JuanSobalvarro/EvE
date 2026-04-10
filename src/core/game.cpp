@@ -113,7 +113,7 @@ void core::Game::update(float deltaTime) {
     float time_before_physics = SDL_GetTicks();
     physicsSystem_->update(*ecsManager_, deltaTime);
     float time_after_physics = SDL_GetTicks();
-    std::cout << "Physics update took " << (time_after_physics - time_before_physics) << " ms" << std::endl;
+    // std::cout << "Physics update took " << (time_after_physics - time_before_physics) << " ms" << std::endl;
 }
 
 void core::Game::render(float deltaTime) {
