@@ -51,7 +51,8 @@ void LuaScene::bindECS() {
 
     lua_.new_usertype<ecs::Sprite>("Sprite",
         "texture", &ecs::Sprite::texture,
-        "blend", &ecs::Sprite::blend
+        "blend", &ecs::Sprite::blend,
+        "alpha", &ecs::Sprite::alpha
     );
 
     lua_.new_usertype<ecs::Color>("Color",
@@ -87,11 +88,11 @@ void LuaScene::bindECS() {
     lua_.set_function("addTransform", [&](ecs::EntityId id, float x, float y, float sx, float sy, float r) { ecsManager_.addComponent<ecs::Transform>(id, x, y, sx, sy, r); });
     lua_.set_function("addVelocity", [&](ecs::EntityId id, float x, float y, float mx, float my) { ecsManager_.addComponent<ecs::Velocity>(id, x, y, mx, my); });
     lua_.set_function("addRigidBody", [&](ecs::EntityId id, float w, float h, bool isStatic, bool collidable, float friction, float gravity, float mass, float bounce) { ecsManager_.addComponent<ecs::RigidBody>(id, w, h, isStatic, collidable, friction, gravity, mass, bounce); });
-    lua_.set_function("addSprite", [&](ecs::EntityId id, const std::string& path, ecs::BlendType blend) {
+    lua_.set_function("addSprite", [&](ecs::EntityId id, const std::string& path, ecs::BlendType blend, sol::optional<Uint8> alpha) {
         SDL_Texture* tex = assetManager_.loadTexture(path, rendererSystem_.getRenderer());
         
         if (tex) {
-            ecsManager_.addComponent<ecs::Sprite>(id, tex, blend);
+            ecsManager_.addComponent<ecs::Sprite>(id, tex, blend, alpha.value_or(255));
         } else {
             std::cerr << "Failed to load sprite: " << path << std::endl;
         }

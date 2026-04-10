@@ -40,6 +40,7 @@ enum class BlendType {
 struct Sprite {
     SDL_Texture* texture = nullptr;
     BlendType blend = BlendType::Normal;
+    Uint8 alpha = 255;
 };
 
 struct Color {

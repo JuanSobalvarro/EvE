@@ -41,6 +41,7 @@ BlendType = {
 ---@class Sprite
 ---@field texture userdata
 ---@field blend BlendType
+---@field alpha integer
 
 ---@class Color
 ---@field r integer
@@ -108,7 +109,8 @@ function addRigidBody(id, w, h, isStatic, collidable, friction, gravity, mass, b
 ---@param id integer
 ---@param texturePath string
 ---@param blend BlendType
-function addSprite(id, texturePath, blend) end
+---@param alpha integer
+function addSprite(id, texturePath, blend, alpha) end
 
 ---@param id integer
 ---@param r integer

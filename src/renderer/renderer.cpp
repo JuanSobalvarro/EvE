@@ -121,6 +121,9 @@ void renderer::Renderer::drawSprite(const ecs::Transform& transform, const ecs::
             break;
     }
 
+    Uint8 alpha = sprite.alpha;
+    SDL_SetTextureAlphaMod(sprite.texture, alpha);
+
     float texW = 0.0f;
     float texH = 0.0f;
     SDL_GetTextureSize(sprite.texture, &texW, &texH);
