@@ -4,6 +4,7 @@ core::Game::Game() {
     ecsManager_ = std::make_unique<ecs::Manager>();
     assetManager_ = std::make_unique<assets::Manager>();
     physicsSystem_ = std::make_unique<ecs::PhysicsSystem>();
+    animationSystem_ = std::make_unique<ecs::AnimationSystem>();
 }
 
 core::Game::~Game() {
@@ -14,6 +15,7 @@ core::Game::~Game() {
     
     // ecs
     physicsSystem_.reset();
+    animationSystem_.reset();
     ecsManager_.reset();
     
     // when destroying renderer system we destroy the SDL_renderer and window, so
@@ -110,9 +112,8 @@ void core::Game::update(float deltaTime) {
     if (currentScene_) {
         currentScene_->onUpdate(deltaTime);
     }
-    float time_before_physics = SDL_GetTicks();
     physicsSystem_->update(*ecsManager_, deltaTime);
-    float time_after_physics = SDL_GetTicks();
+    animationSystem_->update(*ecsManager_, deltaTime);
     // std::cout << "Physics update took " << (time_after_physics - time_before_physics) << " ms" << std::endl;
 }
 

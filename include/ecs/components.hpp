@@ -3,6 +3,8 @@
 #include <SDL3/SDL.h>
 #include <vector>
 
+#include "ecs/types.hpp"
+
 namespace ecs {
 
 struct Transform {
@@ -88,6 +90,48 @@ struct Camera {
 // HUD tells the renderer that this entity corresponds to a UI element
 struct HUD {
     bool interactive = false; // if true this entity will be considered for input events
+};
+
+enum class TweenProperty {
+    // Transform properties
+    PositionX,
+    PositionY,
+    ScaleX,
+    ScaleY,
+    Rotation,
+
+    // Color properties
+    ColorR,
+    ColorG,
+    ColorB,
+    ColorA,
+
+    // sprite alpha
+    SpriteAlpha,
+};
+
+enum class EaseType {
+    Linear,
+    InQuad,
+    OutQuad,
+    InOutQuad,
+    InCubic,
+    OutCubic,
+    InOutCubic
+};
+
+struct Animation {
+    struct TweenData {
+        TweenProperty property;
+        float startValue;
+        float endValue;
+        float duration;
+        float elapsedTime = 0.0f;
+        float delay = 0.0f;
+        EaseType easeType;
+        bool active = true;
+    };
+    std::vector<TweenData> tweens;
 };
 
 }

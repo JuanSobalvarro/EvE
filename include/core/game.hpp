@@ -11,6 +11,7 @@
 #include "renderer/renderer.hpp"
 #include "scene/scene.hpp"
 #include "ecs/physics.hpp"
+#include "ecs/animation.hpp"
 
 #include "scene/lua.hpp"
 
@@ -39,7 +40,7 @@ private:
     std::unique_ptr<assets::Manager> assetManager_;
     std::unique_ptr<renderer::Renderer> rendererSystem_;
     std::unique_ptr<ecs::PhysicsSystem> physicsSystem_;
-
+    std::unique_ptr<ecs::AnimationSystem> animationSystem_;
     std::unique_ptr<scene::Scene> currentScene_;
 };
 

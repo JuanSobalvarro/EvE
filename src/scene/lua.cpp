@@ -82,6 +82,29 @@ void LuaScene::bindECS() {
         "indices", &ecs::Geometry::indices,
         "texture", &ecs::Geometry::texture
     );
+    lua_.new_enum("TweenProperty",
+        "PositionX", ecs::TweenProperty::PositionX,
+        "PositionY", ecs::TweenProperty::PositionY,
+        "ScaleX", ecs::TweenProperty::ScaleX,
+        "ScaleY", ecs::TweenProperty::ScaleY,
+        "Rotation", ecs::TweenProperty::Rotation,
+
+        "ColorR", ecs::TweenProperty::ColorR,
+        "ColorG", ecs::TweenProperty::ColorG,
+        "ColorB", ecs::TweenProperty::ColorB,
+        "ColorA", ecs::TweenProperty::ColorA,
+
+        "SpriteAlpha", ecs::TweenProperty::SpriteAlpha
+    );
+    lua_.new_enum("EaseType",
+        "Linear", ecs::EaseType::Linear,
+        "InQuad", ecs::EaseType::InQuad,
+        "OutQuad", ecs::EaseType::OutQuad,
+        "InOutQuad", ecs::EaseType::InOutQuad,
+        "InCubic", ecs::EaseType::InCubic,
+        "OutCubic", ecs::EaseType::OutCubic,
+        "InOutCubic", ecs::EaseType::InOutCubic
+    );
 
     lua_.set_function("createEntity", [&]() { return ecsManager_.createEntity(); });
     lua_.set_function("destroyEntity", [&](ecs::EntityId id) { ecsManager_.destroyEntity(id); });

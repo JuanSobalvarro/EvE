@@ -64,5 +64,3 @@ void ecs::Manager::clear() {
 std::vector<ecs::EntityId> ecs::Manager::getActiveEntities() const {
     return activeEntityList_;
 }
-
-

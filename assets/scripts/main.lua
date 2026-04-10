@@ -16,6 +16,11 @@ MouseButton = {
 local active_scene = nil --- This will hold the currently active scene module
 local active_scene_name = "intro" --- this holds the name of the active_scene which should be the same as the file name
 
+--- global entities
+BgEntity = -1
+CameraEntity = -1
+
+
 function change_scene(new_scene_name)
     if active_scene and active_scene.on_exit then
         active_scene.on_exit()
@@ -35,6 +40,14 @@ function change_scene(new_scene_name)
 end
 
 function on_enter()
+    CameraEntity = createEntity()
+    addCamera(CameraEntity, 0, 0, 800, 600, 1.0)
+
+    BgEntity = createEntity()
+    addTransform(BgEntity, -400, -300, 1.0, 1.0, 0.0)
+    addColor(BgEntity, 0, 0, 0, 255)
+    addShape(BgEntity, ShapeType.Rectangle, 800.0, 600.0, 0.0, true)
+
     change_scene(active_scene_name)
 end
 
