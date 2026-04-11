@@ -21,6 +21,7 @@ BlendType = {
 ---@field scaleX number
 ---@field scaleY number
 ---@field rotation number
+---@field zIndex integer
 
 ---@class Velocity
 ---@field x number
@@ -74,6 +75,44 @@ BlendType = {
 ---@field screenHeight number
 ---@field zoom number
 
+---@enum TweenProperty
+TweenProperty = {
+    PositionX = 0,
+    PositionY = 1,
+    ScaleX = 2,
+    ScaleY = 3,
+    Rotation = 4,
+    ColorR = 5,
+    ColorG = 6,
+    ColorB = 7,
+    ColorA = 8,
+    SpriteAlpha = 9
+}
+
+---@enum EaseType
+EaseType = {
+    Linear = 0,
+    InQuad = 1,
+    OutQuad = 2,
+    InOutQuad = 3,
+    InCubic = 4,
+    OutCubic = 5,
+    InOutCubic = 6
+}
+
+---@class TweenData
+---@field property TweenProperty
+---@field startValue number
+---@field endValue number
+---@field duration number
+---@field elapsedTime number
+---@field delay number
+---@field easeType EaseType
+---@field isActive boolean
+
+---@class AnimationTween
+---@field tweens table
+
 ---@return integer
 function createEntity() end
 
@@ -86,7 +125,8 @@ function destroyEntity(id) end
 ---@param sx number
 ---@param sy number
 ---@param r number
-function addTransform(id, x, y, sx, sy, r) end
+---@param zIndex integer
+function addTransform(id, x, y, sx, sy, r, zIndex) end
 
 ---@param id integer
 ---@param x number
@@ -157,6 +197,15 @@ function addGeometryCustom(id, vertices, indices) end
 function addCamera(id, x, y, screenWidth, screenHeight, zoom) end
 
 ---@param id integer
+---@param property TweenProperty
+---@param startValue number
+---@param endValue number
+---@param duration number
+---@param delay number
+---@param easeType EaseType
+function addTween(id, property, startValue, endValue, duration, delay, easeType) end
+
+---@param id integer
 ---@return Transform
 function getTransform(id) end
 
@@ -188,6 +237,10 @@ function getCollisionState(id) end
 ---@return Geometry
 function getGeometry(id) end
 
+---@param id integer
+---@return AnimationTween
+function getAnimationTween(id) end
+
 ---@param scancode integer
 ---@return boolean
 function isKeyDown(scancode) end
@@ -208,3 +261,7 @@ function getEntityCount() end
 ---@param height integer
 ---@param cellSize integer
 function setWorld(width, height, cellSize) end
+
+---@param id integer
+---@param componentType string
+function removeComponent(id, componentType) end

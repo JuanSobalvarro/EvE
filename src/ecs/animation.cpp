@@ -1,26 +1,46 @@
 #include "ecs/animation.hpp"
 
 void ecs::AnimationSystem::update(ecs::Manager& manager, float deltaTime) {
-    std::vector<EntityId> entities = manager.getEntitiesWithComponent<Animation>();
+    std::vector<EntityId> entities = manager.getEntitiesWithComponent<AnimationTween>();
 
     for (EntityId id : entities) {
-        Animation& anim = manager.getComponent<Animation>(id);
-        for (Animation::TweenData& tween : anim.tweens) {
+        AnimationTween& anim = manager.getComponent<AnimationTween>(id);
+
+        // std::cout << "Updating entity " << id << " with " << anim.tweens.size() << " active tweens" << std::endl;
+
+        for (auto& tween : anim.tweens) {
             if (!tween.active) continue;
 
             tween.elapsedTime += deltaTime;
-            if (tween.elapsedTime < tween.delay) continue;
+            
+            // Only update if we are past the delay
+            if (tween.elapsedTime >= tween.delay) {
+                updateTween(manager, id, tween);
 
-            updateTween(manager, id, tween);
-
-            if (tween.elapsedTime >= tween.delay + tween.duration) {
-                tween.active = false; // mark as inactive when done
+                if (tween.elapsedTime >= (tween.delay + tween.duration)) {
+                    tween.active = false;
+                }
             }
+        }
+
+        // Clean up dead tweens
+        auto newEnd = std::remove_if(anim.tweens.begin(), anim.tweens.end(), 
+            [](const AnimationTween::TweenData& t) { return !t.active; });
+        
+        if (newEnd != anim.tweens.end()) {
+            // Optional: log which ones died here if you need to debug
+            anim.tweens.erase(newEnd, anim.tweens.end());
         }
     }
 }
 
-void ecs::AnimationSystem::updateTween(ecs::Manager& manager, EntityId entityId, Animation::TweenData& tween) {
+void ecs::AnimationSystem::updateTween(ecs::Manager& manager, EntityId entityId, AnimationTween::TweenData& tween) {
+    
+    if (tween.duration <= 0.0f) {
+        tween.active = false;
+        return;
+    }
+    
     float t = (tween.elapsedTime - tween.delay) / tween.duration;
     t = std::clamp(t, 0.0f, 1.0f);
 
@@ -34,6 +54,22 @@ void ecs::AnimationSystem::updateTween(ecs::Manager& manager, EntityId entityId,
         case EaseType::OutQuad:
             t = t * (2 - t);
             break;
+        case EaseType::InOutQuad:
+            t = (t < 0.5f) ? (2 * t * t) : (-1 + (4 - 2 * t) * t);
+            break;
+        case EaseType::InCubic:
+            t = t * t * t;
+            break;
+        case EaseType::OutCubic: {
+            float f = t - 1.0f;
+            t = f * f * f + 1.0f;
+            break;
+        }
+        case EaseType::InOutCubic:
+            t = (t < 0.5f) ? (4 * t * t * t) : ((t - 1) * (2 * t - 2) * (2 * t - 2) + 1);
+            break;
+        default:
+            throw std::runtime_error("Unsupported ease type");
     }
 
     float newValue = tween.startValue + (tween.endValue - tween.startValue) * t;

@@ -2,11 +2,21 @@
 
 #include <SDL3/SDL.h>
 #include <iostream>
+#include <functional>
+#include <vector>
+#include <algorithm>
+#include <stdexcept>
 
 #include "ecs/manager.hpp"
 #include "ecs/components.hpp"
 
 namespace renderer {
+
+struct RenderCommand {
+    int zIndex;
+    uint64_t entityId;
+    std::function<void()> execute;
+};
 
 class Renderer {
 public:

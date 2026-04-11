@@ -120,7 +120,7 @@ enum class EaseType {
     InOutCubic
 };
 
-struct Animation {
+struct AnimationTween {
     struct TweenData {
         TweenProperty property;
         float startValue;

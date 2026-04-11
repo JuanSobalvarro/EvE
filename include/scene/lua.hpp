@@ -4,6 +4,8 @@
 
 #include <sol/sol.hpp>
 #include <filesystem>
+#include <map>
+#include <string>
 
 #include "scene/scene.hpp"
 #include "ecs/components.hpp"
@@ -28,7 +30,7 @@ private:
 
     sol::state lua_;
     std::string scriptPath_;
-    std::filesystem::file_time_type lastWriteTime_;
+    std::map<std::string, std::filesystem::file_time_type> watchedFiles_;
 };
 
 }

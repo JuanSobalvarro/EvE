@@ -1,5 +1,4 @@
 #include "renderer/renderer.hpp"
-#include <stdexcept>
 
 renderer::Renderer::Renderer(const char* title, int width, int height) {
     window_ = SDL_CreateWindow(title, width, height, 0);
@@ -39,19 +38,8 @@ void renderer::Renderer::update(ecs::Manager& manager, float deltaTime) {
     SDL_SetRenderDrawColor(renderer_, 0, 0, 0, 255);
     SDL_RenderClear(renderer_);
 
+    std::vector<RenderCommand> commands;
     std::vector<ecs::EntityId> entities = manager.getActiveEntities();
-
-    // sort entities based on zIndex for correct rendering order
-    std::sort(entities.begin(), entities.end(), [&manager](ecs::EntityId a, ecs::EntityId b) {
-        int zA = manager.hasComponent<ecs::Transform>(a) ? manager.getComponent<ecs::Transform>(a).zIndex : 0;
-        int zB = manager.hasComponent<ecs::Transform>(b) ? manager.getComponent<ecs::Transform>(b).zIndex : 0;
-
-        if (zA == zB) {
-            return a < b; // if same zIndex, sort by entity ID to ensure consistent order
-        }
-        
-        return zA < zB;
-    });
 
     ecs::Camera activeCamera;
     bool hasCamera = false;
@@ -63,7 +51,6 @@ void renderer::Renderer::update(ecs::Manager& manager, float deltaTime) {
         }
     }
 
-    // Default to origin (0,0) and a standard 800x600 screen if no camera exists yet
     float camX = hasCamera ? activeCamera.x : 0.0f;
     float camY = hasCamera ? activeCamera.y : 0.0f;
     float halfScreenWidth = hasCamera ? (activeCamera.screenWidth / 2.0f) : 400.0f;
@@ -72,35 +59,53 @@ void renderer::Renderer::update(ecs::Manager& manager, float deltaTime) {
     for (auto id : entities) {
         if (!manager.hasComponent<ecs::Transform>(id)) continue;
 
-        const ecs::Transform& worldTransform = manager.getComponent<ecs::Transform>(id);
-        
-        ecs::Transform screenTransform = worldTransform;
-        
-        // For HUD elements, we ignore camera position and zoom, so they stay fixed on the screen
+        const auto& transform = manager.getComponent<ecs::Transform>(id);
+        int z = transform.zIndex;
+
+        // Calculate Screen Space Transform
+        ecs::Transform screenTransform = transform;
         if (manager.hasComponent<ecs::HUD>(id)) {
-            screenTransform.x = worldTransform.x;
-            screenTransform.y = worldTransform.y;
+            screenTransform.x = transform.x;
+            screenTransform.y = transform.y;
         } else {
-            screenTransform.x = (worldTransform.x - camX) + halfScreenWidth;
-            screenTransform.y = (worldTransform.y - camY) + halfScreenHeight;
+            screenTransform.x = (transform.x - camX) + halfScreenWidth;
+            screenTransform.y = (transform.y - camY) + halfScreenHeight;
         }
-    
+
+        // shapes
         if (manager.hasComponent<ecs::Color>(id) && manager.hasComponent<ecs::Shape>(id)) {
-            const ecs::Color& color = manager.getComponent<ecs::Color>(id);
-            const ecs::Shape& shape = manager.getComponent<ecs::Shape>(id);
-
-            SDL_SetRenderDrawColor(renderer_, color.r, color.g, color.b, color.a);
-            drawShape(screenTransform, shape);
+            commands.push_back({z, id, [this, screenTransform, &manager, id]() {
+                const auto& color = manager.getComponent<ecs::Color>(id);
+                const auto& shape = manager.getComponent<ecs::Shape>(id);
+                SDL_SetRenderDrawColor(this->renderer_, color.r, color.g, color.b, color.a);
+                this->drawShape(screenTransform, shape);
+            }});
         }
 
+        // sprites
         if (manager.hasComponent<ecs::Sprite>(id)) {
-            drawSprite(screenTransform, manager.getComponent<ecs::Sprite>(id));
+            commands.push_back({z, id, [this, screenTransform, &manager, id]() {
+                this->drawSprite(screenTransform, manager.getComponent<ecs::Sprite>(id));
+            }});
         }
 
+        // geometries
         if (manager.hasComponent<ecs::Geometry>(id)) {
-            drawGeometry(screenTransform, manager.getComponent<ecs::Geometry>(id));
+            commands.push_back({z, id, [this, screenTransform, &manager, id]() {
+                this->drawGeometry(screenTransform, manager.getComponent<ecs::Geometry>(id));
+            }});
         }
     }
+
+    std::sort(commands.begin(), commands.end(), [](const RenderCommand& a, const RenderCommand& b) {
+        if (a.zIndex != b.zIndex) return a.zIndex < b.zIndex;
+        return a.entityId < b.entityId;
+    });
+
+    for (auto& command : commands) {
+        command.execute();
+    }
+
     SDL_RenderPresent(renderer_);
 }
 

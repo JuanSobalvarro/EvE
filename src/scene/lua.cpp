@@ -30,7 +30,8 @@ void LuaScene::bindECS() {
         "y", &ecs::Transform::y,
         "scaleX", &ecs::Transform::scaleX,
         "scaleY", &ecs::Transform::scaleY,
-        "rotation", &ecs::Transform::rotation
+        "rotation", &ecs::Transform::rotation,
+        "zIndex", &ecs::Transform::zIndex
     );
 
     lua_.new_usertype<ecs::Velocity>("Velocity",
@@ -106,9 +107,24 @@ void LuaScene::bindECS() {
         "InOutCubic", ecs::EaseType::InOutCubic
     );
 
+    lua_.new_usertype<ecs::AnimationTween::TweenData>("TweenData",
+        "property", &ecs::AnimationTween::TweenData::property,
+        "startValue", &ecs::AnimationTween::TweenData::startValue,
+        "endValue", &ecs::AnimationTween::TweenData::endValue,
+        "duration", &ecs::AnimationTween::TweenData::duration,
+        "elapsedTime", &ecs::AnimationTween::TweenData::elapsedTime,
+        "delay", &ecs::AnimationTween::TweenData::delay,
+        "easeType", &ecs::AnimationTween::TweenData::easeType,
+        "active", &ecs::AnimationTween::TweenData::active
+    );
+
+    lua_.new_usertype<ecs::AnimationTween>("AnimationTween",
+        "tweens", &ecs::AnimationTween::tweens
+    );
+
     lua_.set_function("createEntity", [&]() { return ecsManager_.createEntity(); });
     lua_.set_function("destroyEntity", [&](ecs::EntityId id) { ecsManager_.destroyEntity(id); });
-    lua_.set_function("addTransform", [&](ecs::EntityId id, float x, float y, float sx, float sy, float r) { ecsManager_.addComponent<ecs::Transform>(id, x, y, sx, sy, r); });
+    lua_.set_function("addTransform", [&](ecs::EntityId id, float x, float y, float sx, float sy, float r, int zIndex) { ecsManager_.addComponent<ecs::Transform>(id, x, y, sx, sy, r, zIndex); });
     lua_.set_function("addVelocity", [&](ecs::EntityId id, float x, float y, float mx, float my) { ecsManager_.addComponent<ecs::Velocity>(id, x, y, mx, my); });
     lua_.set_function("addRigidBody", [&](ecs::EntityId id, float w, float h, bool isStatic, bool collidable, float friction, float gravity, float mass, float bounce) { ecsManager_.addComponent<ecs::RigidBody>(id, w, h, isStatic, collidable, friction, gravity, mass, bounce); });
     lua_.set_function("addSprite", [&](ecs::EntityId id, const std::string& path, ecs::BlendType blend, sol::optional<Uint8> alpha) {
@@ -198,6 +214,18 @@ void LuaScene::bindECS() {
     lua_.set_function("addCamera", [&](ecs::EntityId id, float x, float y, float screenWidth, float screenHeight, float zoom) {
         ecsManager_.addComponent<ecs::Camera>(id, x, y, screenWidth, screenHeight, zoom);
     });
+    lua_.set_function("addTween", [&](ecs::EntityId id, ecs::TweenProperty property, float startValue, float endValue, float duration, float delay, ecs::EaseType easeType) {
+        ecs::AnimationTween::TweenData tweenData{property, startValue, endValue, duration, 0.0, delay, easeType, true};
+        
+        if (ecsManager_.hasComponent<ecs::AnimationTween>(id)) {
+            ecs::AnimationTween& animTween = ecsManager_.getComponent<ecs::AnimationTween>(id);
+            animTween.tweens.push_back(tweenData);
+        } else {
+            ecs::AnimationTween animTween;
+            animTween.tweens.push_back(tweenData);
+            ecsManager_.addComponent<ecs::AnimationTween>(id, animTween);
+        }
+    });
 
     lua_.set_function("getTransform", [&](ecs::EntityId id) -> ecs::Transform& { return ecsManager_.getComponent<ecs::Transform>(id); });
     lua_.set_function("getVelocity", [&](ecs::EntityId id) -> ecs::Velocity& { return ecsManager_.getComponent<ecs::Velocity>(id); });
@@ -207,7 +235,8 @@ void LuaScene::bindECS() {
     lua_.set_function("getShape", [&](ecs::EntityId id) -> ecs::Shape& { return ecsManager_.getComponent<ecs::Shape>(id); });
     lua_.set_function("getCollisionState", [&](ecs::EntityId id) -> ecs::CollisionState& { return ecsManager_.getComponent<ecs::CollisionState>(id); });
     lua_.set_function("getGeometry", [&](ecs::EntityId id) -> ecs::Geometry& { return ecsManager_.getComponent<ecs::Geometry>(id); });
-    
+    lua_.set_function("getAnimationTween", [&](ecs::EntityId id) -> ecs::AnimationTween& { return ecsManager_.getComponent<ecs::AnimationTween>(id); });
+
     lua_.set_function("isKeyDown", [&](int scancode) {
         const bool* state = SDL_GetKeyboardState(nullptr);
         return state[scancode];
@@ -229,6 +258,59 @@ void LuaScene::bindECS() {
     lua_.set_function("getEntityCount", [&]() { return ecsManager_.getActiveEntities().size(); });
 
     lua_.set_function("setWorld", [&](int width, int height, int cellSize) { physicsSystem_.setWorld(width, height, cellSize); });
+
+    lua_.set_function("hasComponent", [&](ecs::EntityId id, const std::string& componentType) {
+        if (componentType == "Transform") {
+            return ecsManager_.hasComponent<ecs::Transform>(id);
+        } else if (componentType == "Velocity") {
+            return ecsManager_.hasComponent<ecs::Velocity>(id);
+        } else if (componentType == "RigidBody") {
+            return ecsManager_.hasComponent<ecs::RigidBody>(id);
+        } else if (componentType == "Sprite") {
+            return ecsManager_.hasComponent<ecs::Sprite>(id);
+        } else if (componentType == "Color") {
+            return ecsManager_.hasComponent<ecs::Color>(id);
+        } else if (componentType == "Shape") {
+            return ecsManager_.hasComponent<ecs::Shape>(id);
+        } else if (componentType == "CollisionState") {
+            return ecsManager_.hasComponent<ecs::CollisionState>(id);
+        } else if (componentType == "Geometry") {
+            return ecsManager_.hasComponent<ecs::Geometry>(id);
+        } else if (componentType == "AnimationTween") {
+            return ecsManager_.hasComponent<ecs::AnimationTween>(id);
+        } else if (componentType == "Camera") {
+            return ecsManager_.hasComponent<ecs::Camera>(id);
+        } else {
+            std::cerr << "Unknown component type: " << componentType << std::endl;
+            return false;
+        }
+    });
+
+    lua_.set_function("removeComponent", [&](ecs::EntityId id, const std::string& componentType) {
+        if (componentType == "Transform") {
+            ecsManager_.removeComponent<ecs::Transform>(id);
+        } else if (componentType == "Velocity") {
+            ecsManager_.removeComponent<ecs::Velocity>(id);
+        } else if (componentType == "RigidBody") {
+            ecsManager_.removeComponent<ecs::RigidBody>(id);
+        } else if (componentType == "Sprite") {
+            ecsManager_.removeComponent<ecs::Sprite>(id);
+        } else if (componentType == "Color") {
+            ecsManager_.removeComponent<ecs::Color>(id);
+        } else if (componentType == "Shape") {
+            ecsManager_.removeComponent<ecs::Shape>(id);
+        } else if (componentType == "CollisionState") {
+            ecsManager_.removeComponent<ecs::CollisionState>(id);
+        } else if (componentType == "Geometry") {
+            ecsManager_.removeComponent<ecs::Geometry>(id);
+        } else if (componentType == "AnimationTween") {
+            ecsManager_.removeComponent<ecs::AnimationTween>(id);
+        } else if (componentType == "Camera") {
+            ecsManager_.removeComponent<ecs::Camera>(id);
+        } else {
+            std::cerr << "Unknown component type: " << componentType << std::endl;
+        }
+    });
 }
 
 void LuaScene::loadAndExecute() {
@@ -258,18 +340,27 @@ void LuaScene::loadAndExecute() {
 
 void LuaScene::onEnter() {
     std::error_code ec;
-    lastWriteTime_ = std::filesystem::last_write_time(scriptPath_, ec);
+    watchedFiles_[scriptPath_] = std::filesystem::last_write_time(scriptPath_);
     loadAndExecute();
 }
 
 void LuaScene::onUpdate(float deltaTime) {
+    bool needsReload = false;
     std::error_code ec;
-    auto currentTime = std::filesystem::last_write_time(scriptPath_, ec);
 
-    if (!ec && currentTime > lastWriteTime_) {
-        lastWriteTime_ = currentTime;
-        std::cout << "Reloading script: " << scriptPath_ << std::endl;
+    for (auto& [path, lastTime] : watchedFiles_) {
+        auto currentTime = std::filesystem::last_write_time(path, ec);
+        if (!ec && currentTime > lastTime) {
+            lastTime = currentTime;
+            needsReload = true;
+            std::cout << "Change detected in: " << path << std::endl;
+        }
+    }
+
+    if (needsReload) {
         ecsManager_.clear();
+        // clear lua internal cache
+        lua_["package"]["loaded"] = lua_.create_table(); 
         loadAndExecute();
     }
 
