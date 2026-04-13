@@ -134,4 +134,12 @@ struct AnimationTween {
     std::vector<TweenData> tweens;
 };
 
+struct AudioSource {
+    unsigned int alSource; // id provided by OpenAL
+    unsigned int alBuffer; // id of the audio buffer being played
+    bool isLooping = false;
+    float pitch = 1.0f;
+    float gain = 1.0f;
+};
+
 }

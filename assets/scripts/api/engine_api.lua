@@ -265,3 +265,13 @@ function setWorld(width, height, cellSize) end
 ---@param id integer
 ---@param componentType string
 function removeComponent(id, componentType) end
+
+---@param path string 
+---@param loop boolean
+---@param pitch number
+---@param gain number
+function playSound(path, loop, pitch, gain) end
+
+function stopAllSounds() end
+
+function quitGame() end

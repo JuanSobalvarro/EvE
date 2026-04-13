@@ -16,7 +16,7 @@ namespace scene {
 
 class LuaScene : public Scene {
 public:
-    LuaScene(ecs::Manager& ecsManager, assets::Manager& assetManager, ecs::PhysicsSystem& physicsSystem, renderer::Renderer& rendererSystem, core::Game& game, const std::string& scriptPath);
+    LuaScene(ecs::Manager& ecsManager, assets::Manager& assetManager, ecs::PhysicsSystem& physicsSystem, renderer::Renderer& rendererSystem, ecs::AudioSystem& audioSystem, core::Game& game, const std::string& scriptPath);
     ~LuaScene() override;
     void onEnter() override;
     void onUpdate(float deltaTime) override;

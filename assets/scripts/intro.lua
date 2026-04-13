@@ -41,10 +41,12 @@ function intro.on_enter()
     addTween(BgEntity, TweenProperty.ColorB, bg_final_color.b, 0, 5.0, 6.0, EaseType.OutQuad)
 
     title_entity = createEntity()
-    addTransform(title_entity, -200.0, -200.0, 4.0, 4.0, 0.0, 2)
+    addTransform(title_entity, -200.0, -200.0, 0.2, 0.2, 0.0, 2)
     addSprite(title_entity, "assets/sprites/eve.png", BlendType.Normal, 0)
     addTween(title_entity, TweenProperty.SpriteAlpha, 0, 255, 5.0, 0.0, EaseType.InQuad)
     addTween(title_entity, TweenProperty.SpriteAlpha, 255, 0, 5.0, 6.0, EaseType.OutQuad)
+
+    playSound("assets/sounds/intro.wav", false, 0.5, 1.0)
 end
 
 function intro.update(dt)
@@ -92,6 +94,7 @@ function intro.on_exit()
         title_entity = -1
     end
 
+    stopAllSounds()
 end
 
 return intro

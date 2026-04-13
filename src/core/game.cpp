@@ -3,8 +3,10 @@
 core::Game::Game() {
     ecsManager_ = std::make_unique<ecs::Manager>();
     assetManager_ = std::make_unique<assets::Manager>();
-    physicsSystem_ = std::make_unique<ecs::PhysicsSystem>();
-    animationSystem_ = std::make_unique<ecs::AnimationSystem>();
+
+    gameSystems_.physics = std::make_unique<ecs::PhysicsSystem>();
+    gameSystems_.animation = std::make_unique<ecs::AnimationSystem>();
+    gameSystems_.audio = std::make_unique<ecs::AudioSystem>();
 }
 
 core::Game::~Game() {
@@ -13,14 +15,16 @@ core::Game::~Game() {
     currentScene_.reset();
     assetManager_.reset(); // destroy first the textures since it need the renderer pointer to be alive
     
-    // ecs
-    physicsSystem_.reset();
-    animationSystem_.reset();
+    // managers
     ecsManager_.reset();
+
+    gameSystems_.physics.reset();
+    gameSystems_.animation.reset();
+    gameSystems_.audio.reset();
     
     // when destroying renderer system we destroy the SDL_renderer and window, so
     // we can safely do SDL Quit after that
-    rendererSystem_.reset();
+    gameSystems_.renderer.reset();
     
     SDL_Quit();
 }
@@ -31,9 +35,9 @@ bool core::Game::init(const char* title, int width, int height) {
         return false;
     }
 
-    rendererSystem_ = std::make_unique<renderer::Renderer>(title, width, height);
+    gameSystems_.renderer = std::make_unique<renderer::Renderer>(title, width, height);
 
-    changeScene(std::make_unique<scene::LuaScene>(*ecsManager_, *assetManager_, *physicsSystem_, *rendererSystem_, *this, "assets/scripts/main.lua"));
+    changeScene(std::make_unique<scene::LuaScene>(*ecsManager_, *assetManager_, *gameSystems_.physics, *gameSystems_.renderer, *gameSystems_.audio, *this, "assets/scripts/main.lua"));
 
     isRunning_ = true;
     return true;
@@ -112,11 +116,11 @@ void core::Game::update(float deltaTime) {
     if (currentScene_) {
         currentScene_->onUpdate(deltaTime);
     }
-    physicsSystem_->update(*ecsManager_, deltaTime);
-    animationSystem_->update(*ecsManager_, deltaTime);
+    gameSystems_.physics->update(*ecsManager_, deltaTime);
+    gameSystems_.animation->update(*ecsManager_, deltaTime);
     // std::cout << "Physics update took " << (time_after_physics - time_before_physics) << " ms" << std::endl;
 }
 
 void core::Game::render(float deltaTime) {
-    rendererSystem_->update(*ecsManager_, deltaTime);
+    gameSystems_.renderer->update(*ecsManager_, deltaTime);
 }

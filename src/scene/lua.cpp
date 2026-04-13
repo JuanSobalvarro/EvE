@@ -1,10 +1,11 @@
 #include "scene/lua.hpp"
+#include "core/game.hpp"
 #include <iostream>
 
 namespace scene {
 
-LuaScene::LuaScene(ecs::Manager& ecsManager, assets::Manager& assetManager, ecs::PhysicsSystem& physicsSystem, renderer::Renderer& rendererSystem, core::Game& game, const std::string& scriptPath) 
-    : Scene(ecsManager, assetManager, physicsSystem, rendererSystem, game), scriptPath_(scriptPath) {
+LuaScene::LuaScene(ecs::Manager& ecsManager, assets::Manager& assetManager, ecs::PhysicsSystem& physicsSystem, renderer::Renderer& rendererSystem, ecs::AudioSystem& audioSystem, core::Game& game, const std::string& scriptPath) 
+    : Scene(ecsManager, assetManager, physicsSystem, rendererSystem, audioSystem, game), scriptPath_(scriptPath) {
     
     lua_.open_libraries(sol::lib::base, sol::lib::package, sol::lib::math, sol::lib::table, sol::lib::os);
     bindECS();
@@ -310,6 +311,16 @@ void LuaScene::bindECS() {
         } else {
             std::cerr << "Unknown component type: " << componentType << std::endl;
         }
+    });
+
+    lua_.set_function("playSound", [&](const std::string& path, bool loop, float pitch, float gain) {
+        audioSystem_.playSound(path.c_str(), loop, pitch, gain);
+    });
+    lua_.set_function("stopAllSounds", [&]() {
+        audioSystem_.stopAllSounds();
+    });
+    lua_.set_function("quitGame", [&]() {
+        game_.stop();
     });
 }
 

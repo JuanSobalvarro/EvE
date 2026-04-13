@@ -12,10 +12,18 @@
 #include "scene/scene.hpp"
 #include "ecs/physics.hpp"
 #include "ecs/animation.hpp"
+#include "ecs/audio.hpp"
 
 #include "scene/lua.hpp"
 
 namespace core {
+
+struct GameSystems {
+    std::unique_ptr<renderer::Renderer> renderer;
+    std::unique_ptr<ecs::PhysicsSystem> physics;
+    std::unique_ptr<ecs::AnimationSystem> animation;
+    std::unique_ptr<ecs::AudioSystem> audio;
+};
 
 class Game {
 public:
@@ -38,9 +46,9 @@ private:
 
     std::unique_ptr<ecs::Manager> ecsManager_;
     std::unique_ptr<assets::Manager> assetManager_;
-    std::unique_ptr<renderer::Renderer> rendererSystem_;
-    std::unique_ptr<ecs::PhysicsSystem> physicsSystem_;
-    std::unique_ptr<ecs::AnimationSystem> animationSystem_;
+    
+    GameSystems gameSystems_;
+
     std::unique_ptr<scene::Scene> currentScene_;
 };
 

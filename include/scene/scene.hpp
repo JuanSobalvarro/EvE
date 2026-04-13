@@ -4,6 +4,7 @@
 
 #include "ecs/manager.hpp"
 #include "ecs/physics.hpp"
+#include "ecs/audio.hpp"
 #include "renderer/renderer.hpp"
 #include "assets/manager.hpp"
 
@@ -13,7 +14,7 @@ namespace scene {
 
 class Scene {
 public:
-    Scene(ecs::Manager& ecsManager, assets::Manager& assetManager, ecs::PhysicsSystem& physicsSystem, renderer::Renderer& rendererSystem, core::Game& game) : ecsManager_(ecsManager), assetManager_(assetManager), physicsSystem_(physicsSystem), rendererSystem_(rendererSystem), game_(game) {};
+    Scene(ecs::Manager& ecsManager, assets::Manager& assetManager, ecs::PhysicsSystem& physicsSystem, renderer::Renderer& rendererSystem, ecs::AudioSystem& audioSystem, core::Game& game) : ecsManager_(ecsManager), assetManager_(assetManager), physicsSystem_(physicsSystem), rendererSystem_(rendererSystem), audioSystem_(audioSystem), game_(game) {};
     virtual ~Scene() = default;
 
     virtual void onEnter() = 0;
@@ -26,6 +27,7 @@ protected:
     assets::Manager& assetManager_;
     renderer::Renderer& rendererSystem_;
     ecs::PhysicsSystem& physicsSystem_;
+    ecs::AudioSystem& audioSystem_;
     core::Game& game_;
 };
 

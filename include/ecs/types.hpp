@@ -7,6 +7,6 @@ namespace ecs {
 
 using EntityId = uint64_t;
 
-const size_t MAX_ENTITIES = 5000;
+const size_t MAX_ENTITIES = 100000;
 
 }
