@@ -227,6 +227,10 @@ void LuaScene::bindECS() {
             ecsManager_.addComponent<ecs::AnimationTween>(id, animTween);
         }
     });
+    lua_.set_function("addTimer", [&](ecs::EntityId id, float duration, float delay, bool repeat, std::function<void()> callback) {
+        ecs::Timer timer{duration, 0.0f, delay, repeat, callback};
+        ecsManager_.addComponent<ecs::Timer>(id, timer);
+    });
 
     lua_.set_function("getTransform", [&](ecs::EntityId id) -> ecs::Transform& { return ecsManager_.getComponent<ecs::Transform>(id); });
     lua_.set_function("getVelocity", [&](ecs::EntityId id) -> ecs::Velocity& { return ecsManager_.getComponent<ecs::Velocity>(id); });

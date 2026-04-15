@@ -36,6 +36,23 @@ ecs::AudioSystem::~AudioSystem() {
 
 void ecs::AudioSystem::playSound(const char* filePath, bool loop, float pitch, float gain) {
 
+    activeSources_.erase(std::remove_if(activeSources_.begin(), activeSources_.end(),
+        [](const AudioSource& s) {
+            ALint state;
+            alGetSourcei(s.alSource, AL_SOURCE_STATE, &state);
+            if (state != AL_PLAYING) {
+                alDeleteSources(1, &s.alSource);
+                alDeleteBuffers(1, &s.alBuffer);
+                return true;
+            }
+            return false;
+        }), activeSources_.end());
+
+    if (activeSources_.size() >= 128) { // OpenAL Soft default limit is often 256
+        std::cerr << "Audio cap reached, skipping sound: " << filePath << std::endl;
+        return;
+    }
+
     if (!device_ || !context_) {
         std::cerr << "OpenAL is not initialized" << std::endl;
         return;
@@ -107,7 +124,6 @@ void ecs::AudioSystem::playSound(const char* filePath, bool loop, float pitch, f
     activeSources_.push_back({source, buffer, loop, pitch, gain});
 
     drwav_free(pcmFrames, nullptr);
-
 
 }
 

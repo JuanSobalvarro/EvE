@@ -2,6 +2,7 @@
 
 #include <SDL3/SDL.h>
 #include <vector>
+#include <functional>
 
 #include "ecs/types.hpp"
 
@@ -140,6 +141,14 @@ struct AudioSource {
     bool isLooping = false;
     float pitch = 1.0f;
     float gain = 1.0f;
+};
+
+struct Timer {
+    float duration = 0.0f;
+    float elapsed = 0.0f;
+    float delay = 0.0f;
+    bool repeat = false;
+    std::function<void()> callback;
 };
 
 }

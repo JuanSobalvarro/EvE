@@ -161,7 +161,7 @@ function menu.handle_input()
     if just_pressed then
         if active_button == "play" then
             stopAllSounds()
-            change_scene("demo")
+            change_scene("level")
         elseif active_button == "exit" then
             quitGame()
         end

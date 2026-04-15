@@ -118,7 +118,22 @@ void core::Game::update(float deltaTime) {
     }
     gameSystems_.physics->update(*ecsManager_, deltaTime);
     gameSystems_.animation->update(*ecsManager_, deltaTime);
-    // std::cout << "Physics update took " << (time_after_physics - time_before_physics) << " ms" << std::endl;
+    
+    // update entities with component Timer
+    for (ecs::EntityId entityId : ecsManager_->getEntitiesWithComponent<ecs::Timer>()) {
+        auto& timer = ecsManager_->getComponent<ecs::Timer>(entityId);
+        timer.elapsed += deltaTime;
+        if (timer.elapsed >= timer.duration + timer.delay) {
+            if (timer.callback) {
+                timer.callback();
+            }
+            if (timer.repeat) {
+                timer.elapsed = 0.0f;
+            } else {
+                ecsManager_->removeComponent<ecs::Timer>(entityId);
+            }
+        }
+    }
 }
 
 void core::Game::render(float deltaTime) {

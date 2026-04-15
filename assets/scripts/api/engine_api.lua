@@ -206,6 +206,13 @@ function addCamera(id, x, y, screenWidth, screenHeight, zoom) end
 function addTween(id, property, startValue, endValue, duration, delay, easeType) end
 
 ---@param id integer
+---@param duration number
+---@param delay number
+---@param repeatable boolean
+---@param callback function
+function addTimer(id, duration, delay, repeatable, callback) end
+
+---@param id integer
 ---@return Transform
 function getTransform(id) end
 
@@ -265,6 +272,11 @@ function setWorld(width, height, cellSize) end
 ---@param id integer
 ---@param componentType string
 function removeComponent(id, componentType) end
+
+---@param id integer
+---@param componentType string
+---@return boolean
+function hasComponent(id, componentType) end
 
 ---@param path string 
 ---@param loop boolean

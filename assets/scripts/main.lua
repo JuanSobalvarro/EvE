@@ -2,8 +2,11 @@ package.path = package.path .. ";assets/scripts/?.lua"
 
 Key = {
     A = 4,
+    W = 26,
+    S = 22,
     D = 7,
-    SPACE = 44
+    R = 21,
+    SPACE = 44,
 }
 
 MouseButton = {
@@ -22,7 +25,7 @@ local transition_duration = 1.0
 local pending_scene_name = ""
 
 local active_scene = nil
-local active_scene_name = "intro"
+local active_scene_name = "menu"
 
 function put_scene_changer(color, duration)
     local sc_color = getColor(SceneChangerEntity)
